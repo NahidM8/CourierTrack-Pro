@@ -1,4 +1,4 @@
-using CourierTrack.Domain.Enums;
+﻿using CourierTrack.Domain.Enums;
 
 namespace CourierTrack.Domain.Entities;
 

@@ -47,31 +47,10 @@ namespace CourierTrack.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId")
+                        .IsUnique();
 
-                    b.ToTable("Courier");
-                });
-
-            modelBuilder.Entity("CourierTrack.Domain.Entities.Order", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime?>("DeliveredAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("TrackingNubmer")
-                        .IsRequired()
-                        .HasMaxLength(12)
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Order");
+                    b.ToTable("Couriers");
                 });
 
             modelBuilder.Entity("CourierTrack.Domain.Entities.User", b =>
@@ -112,12 +91,17 @@ namespace CourierTrack.Infrastructure.Migrations
             modelBuilder.Entity("CourierTrack.Domain.Entities.Courier", b =>
                 {
                     b.HasOne("CourierTrack.Domain.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
+                        .WithOne("Courier")
+                        .HasForeignKey("CourierTrack.Domain.Entities.Courier", "UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("CourierTrack.Domain.Entities.User", b =>
+                {
+                    b.Navigation("Courier");
                 });
 #pragma warning restore 612, 618
         }

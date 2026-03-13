@@ -11,8 +11,7 @@ public class CourierTrackDbContext : DbContext
     }
 
     public DbSet<User> Users { get; set; }
-    //public DbSet<Courier> Couriers { get; set; }
-    //public DbSet<Order> Orders { get; set; }
+    public DbSet<Courier> Couriers { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
