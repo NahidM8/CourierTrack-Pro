@@ -31,9 +31,9 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.IsActive)
             .IsRequired();
 
-        builder.HasOne(u => u.Courier)
-            .WithOne(c => c.User)
-            .HasForeignKey<Courier>(c => c.UserId)
-            .OnDelete(DeleteBehavior.Cascade);
+        //builder.HasOne(u => u.Courier)
+        //    .WithOne(c => c.User)
+        //    .HasForeignKey<Courier>(c => c.UserId)
+        //    .OnDelete(DeleteBehavior.Cascade);
     }
 }
