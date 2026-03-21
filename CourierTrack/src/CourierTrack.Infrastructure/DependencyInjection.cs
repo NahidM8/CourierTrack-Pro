@@ -18,6 +18,9 @@ public static class DependencyInjection
             options.UseSqlite(connectionString));
 
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+        services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<ICourierRepository, CourierRepository>();
+        services.AddScoped<IOrderRepository, OrderRepository>();
 
         return services;
     }

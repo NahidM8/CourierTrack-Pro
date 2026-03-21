@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CourierTrack.Infrastructure.Repositories.Implementations;
 
-internal class Repository<T>(CourierTrackDbContext context) : IRepository<T> where T : class
+public class Repository<T>(CourierTrackDbContext context) : IRepository<T> where T : class
 {
     protected readonly CourierTrackDbContext _context = context;
     protected readonly DbSet<T> _dbSet = context.Set<T>();
