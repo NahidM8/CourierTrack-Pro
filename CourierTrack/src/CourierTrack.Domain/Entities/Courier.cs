@@ -1,10 +1,10 @@
-﻿using CourierTrack.Domain.Enums;
+﻿using CourierTrack.Domain.Common;
+using CourierTrack.Domain.Enums;
 
 namespace CourierTrack.Domain.Entities;
 
-public class Courier
+public class Courier : BaseEntity
 {
-    public Guid Id { get; set; }
     public Guid UserId { get; set; }
     public VehicleType VehicleType { get; set; }
     public double? CurrentLatitude { get; set; }

@@ -1,10 +1,10 @@
-﻿using CourierTrack.Domain.Enums;
+﻿using CourierTrack.Domain.Common;
+using CourierTrack.Domain.Enums;
 
 namespace CourierTrack.Domain.Entities;
 
-public class Order
+public class Order : AuditableEntity
 {
-    public Guid Id { get; set; }
     public Guid CustomerId { get; set; }
     public Guid? CourierId { get; set; }
     public string TrackingNumber { get; set; } = null!;
@@ -21,7 +21,6 @@ public class Order
     public string EstimatedDuration { get; set; } = null!;
     public decimal Price { get; set; }
     public OrderStatus Status { get; set; }
-    public DateTime CreatedAt { get; set; }
     public DateTime? PickedUpAt { get; set; }
     public DateTime? DeliveredAt { get; set; }
 
