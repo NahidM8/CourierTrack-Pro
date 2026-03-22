@@ -21,7 +21,6 @@ public class Order : AuditableEntity
     public string EstimatedDuration { get; set; } = null!;
     public decimal Price { get; set; }
     public OrderStatus Status { get; set; }
-    public DateTime CreatedAt { get; set; }
     public DateTime? PickedUpAt { get; set; }
     public DateTime? DeliveredAt { get; set; }
 
