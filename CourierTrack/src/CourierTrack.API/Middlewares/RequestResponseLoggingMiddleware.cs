@@ -24,24 +24,33 @@ public class RequestResponseLoggingMiddleware(
         using var responseBody = new MemoryStream();
         context.Response.Body = responseBody;
 
-        await next(context);
+        try
+        {
+            await next(context);
 
-        stopwatch.Stop();
+            stopwatch.Stop();
 
-        var responseText = await ReadResponseBody(context.Response);
+            var responseText = await ReadResponseBody(context.Response);
 
-        logger.LogInformation(
-            "HTTP Response: {StatusCode} | Time: {Elapsed}ms | Body: {Body}",
-            context.Response.StatusCode,
-            stopwatch.ElapsedMilliseconds,
-            responseText
-        );
-
-        await responseBody.CopyToAsync(originalBodyStream);
+            logger.LogInformation(
+                "HTTP Response: {StatusCode} | Time: {Elapsed}ms | Body: {Body}",
+                context.Response.StatusCode,
+                stopwatch.ElapsedMilliseconds,
+                responseText
+            );
+        }
+        finally
+        {
+            await responseBody.CopyToAsync(originalBodyStream);
+            context.Response.Body = originalBodyStream;
+        }
     }
 
     private async Task<string> ReadRequestBody(HttpRequest request)
     {
+        if (request.ContentLength == 0 || request.ContentLength is null)
+            return string.Empty;
+
         request.EnableBuffering();
 
         using var reader = new StreamReader(

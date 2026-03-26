@@ -1,3 +1,4 @@
+using CourierTrack.API.Middlewares;
 using CourierTrack.Application;
 using CourierTrack.Infrastructure;
 
@@ -22,6 +23,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseMiddleware<RequestResponseLoggingMiddleware>();
+app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
 
 app.UseAuthentication();
 app.UseAuthorization();
