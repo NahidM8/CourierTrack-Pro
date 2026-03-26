@@ -1,7 +1,3 @@
-using CourierTrack.API.Middlewares;
-using CourierTrack.Application;
-using CourierTrack.Infrastructure;
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.

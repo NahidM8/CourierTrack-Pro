@@ -1,11 +1,4 @@
-﻿using AutoMapper;
-using CourierTrack.Application.DTOs;
-using CourierTrack.Domain.Entities;
-using CourierTrack.Domain.Enums;
-using CourierTrack.Infrastructure.Repositories.Interfaces;
-using Microsoft.AspNetCore.Mvc;
-
-namespace CourierTrack.API.Controllers;
+﻿namespace CourierTrack.API.Controllers;
 
 [Route("api/v1/orders")]
 [ApiController]

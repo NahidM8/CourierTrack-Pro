@@ -2,7 +2,9 @@
 
 namespace CourierTrack.API.Middlewares;
 
-public class GlobalExceptionHandlingMiddleware(RequestDelegate next)
+public class GlobalExceptionHandlingMiddleware(
+    RequestDelegate next,
+    ILogger<GlobalExceptionHandlingMiddleware> logger)
 {
     public async Task InvokeAsync(HttpContext context)
     {
@@ -12,24 +14,36 @@ public class GlobalExceptionHandlingMiddleware(RequestDelegate next)
         }
         catch (BaseException ex)
         {
-            context.Response.StatusCode = ex.StatusCode;
-            context.Response.ContentType = "application/json";
-
-            var response = ApiResponse<object>.FailResult(ex.Message, ex.ErrorCode);
-            await context.Response.WriteAsJsonAsync(response);
+            logger.LogWarning(ex, "Application exception occurred: {ErrorCode}", ex.ErrorCode);
+            await HandleExceptionAsync(context, ex.StatusCode, ex.Message, ex.ErrorCode);
         }
         catch (Exception ex)
         {
-            context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-            context.Response.ContentType = "application/json";
-
-            var response = ApiResponse<object>.FailResult(
-                ex.Message,
-                code: "INTERNAL_ERROR",
-                details: new List<string> { ex.StackTrace ?? "No stack trace available" }
+            logger.LogError(ex, "Unhandled exception occurred");
+            await HandleExceptionAsync(
+                context,
+                StatusCodes.Status500InternalServerError,
+                "An internal server error occurred.",
+                "INTERNAL_ERROR"
             );
-
-            await context.Response.WriteAsJsonAsync(response);
         }
+    }
+
+    private static Task HandleExceptionAsync(
+        HttpContext context,
+        int statusCode,
+        string message,
+        string errorCode)
+    {
+        if (context.Response.HasStarted)
+        {
+            return Task.CompletedTask;
+        }
+
+        context.Response.StatusCode = statusCode;
+        context.Response.ContentType = "application/json";
+
+        var response = ApiResponse<object>.FailResult(message, code: errorCode);
+        return context.Response.WriteAsJsonAsync(response);
     }
 }
