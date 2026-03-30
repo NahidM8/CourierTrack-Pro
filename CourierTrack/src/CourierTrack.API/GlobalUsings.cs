@@ -1,5 +1,6 @@
 ﻿global using Microsoft.AspNetCore.Mvc;
 global using AutoMapper;
+global using FluentValidation;
 
 global using CourierTrack.Domain.Entities;
 global using CourierTrack.Domain.Enums;

@@ -2,7 +2,12 @@
 
 [Route("api/v1/orders")]
 [ApiController]
-public class OrdersController(IOrderRepository orderRepository, IMapper mapper, IConfiguration configuration) : ControllerBase
+public class OrdersController(
+    IOrderRepository orderRepository,
+    IMapper mapper,
+    IConfiguration configuration,
+    IValidator<CreateOrderDto> createOrderValidator,
+    IValidator<UpdateOrderDto> updateOrderValidator) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<IEnumerable<OrderDto>>> GetAll()
@@ -42,6 +47,10 @@ public class OrdersController(IOrderRepository orderRepository, IMapper mapper, 
     [HttpPost]
     public async Task<ActionResult<OrderDto>> Create([FromBody] CreateOrderDto request)
     {
+        var validationResult = await createOrderValidator.ValidateAsync(request);
+        if (!validationResult.IsValid)
+            return BadRequest(validationResult.Errors);
+
         var order = mapper.Map<Order>(request);
 
         var estimatedDistanceKm = CalculateDistanceKm(
@@ -67,6 +76,10 @@ public class OrdersController(IOrderRepository orderRepository, IMapper mapper, 
     [HttpPut("{id:guid}/status")]
     public async Task<ActionResult<OrderDto>> UpdateStatus(Guid id, [FromBody] UpdateOrderDto request)
     {
+        var validationResult = await updateOrderValidator.ValidateAsync(request);
+        if (!validationResult.IsValid)
+            return BadRequest(validationResult.Errors);
+
         var order = await orderRepository.GetByIdAsync(id);
         if (order is null)
             return NotFound();
@@ -140,7 +153,7 @@ public class OrdersController(IOrderRepository orderRepository, IMapper mapper, 
     private decimal CalculatePrice(decimal distanceKm, decimal packageWeight, PackageSize packageSize)
     {
         // Price formula from image: Fiyat = (Mesafe x KmBasınaFiyat) + (AğırlıklıKatsayısı x Ağırlık) + BoyutEkFiyatı
-        var pricePenka = configuration.GetValue<decimal>("PricingService:PricePenka");
+        var pricePerKm = configuration.GetValue<decimal>("PricingService:PricePerKm");
         var weightMultiplier = configuration.GetValue<decimal>("PricingService:WeightMultiplier");
         var minimumPrice = configuration.GetValue<decimal>("PricingService:MinimumPrice");
 
@@ -153,7 +166,7 @@ public class OrdersController(IOrderRepository orderRepository, IMapper mapper, 
             _ => 0m
         };
 
-        var totalPrice = (distanceKm * pricePenka) + (weightMultiplier * packageWeight) + sizeCharge;
+        var totalPrice = (distanceKm * pricePerKm) + (weightMultiplier * packageWeight) + sizeCharge;
         return Math.Round(Math.Max(totalPrice, minimumPrice), 2);
     }
 }
