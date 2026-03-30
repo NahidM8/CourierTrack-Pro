@@ -2,7 +2,12 @@
 
 [Route("api/v1/orders")]
 [ApiController]
-public class OrdersController(IOrderRepository orderRepository, IMapper mapper, IConfiguration configuration) : ControllerBase
+public class OrdersController(
+    IOrderRepository orderRepository,
+    IMapper mapper,
+    IConfiguration configuration,
+    IValidator<CreateOrderDto> createOrderValidator,
+    IValidator<UpdateOrderDto> updateOrderValidator) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<IEnumerable<OrderDto>>> GetAll()
@@ -42,6 +47,10 @@ public class OrdersController(IOrderRepository orderRepository, IMapper mapper, 
     [HttpPost]
     public async Task<ActionResult<OrderDto>> Create([FromBody] CreateOrderDto request)
     {
+        var validationResult = await createOrderValidator.ValidateAsync(request);
+        if (!validationResult.IsValid)
+            return BadRequest(validationResult.Errors);
+
         var order = mapper.Map<Order>(request);
 
         var estimatedDistanceKm = CalculateDistanceKm(
@@ -67,6 +76,10 @@ public class OrdersController(IOrderRepository orderRepository, IMapper mapper, 
     [HttpPut("{id:guid}/status")]
     public async Task<ActionResult<OrderDto>> UpdateStatus(Guid id, [FromBody] UpdateOrderDto request)
     {
+        var validationResult = await updateOrderValidator.ValidateAsync(request);
+        if (!validationResult.IsValid)
+            return BadRequest(validationResult.Errors);
+
         var order = await orderRepository.GetByIdAsync(id);
         if (order is null)
             return NotFound();
