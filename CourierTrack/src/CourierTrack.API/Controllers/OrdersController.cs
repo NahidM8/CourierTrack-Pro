@@ -153,7 +153,7 @@ public class OrdersController(
     private decimal CalculatePrice(decimal distanceKm, decimal packageWeight, PackageSize packageSize)
     {
         // Price formula from image: Fiyat = (Mesafe x KmBasınaFiyat) + (AğırlıklıKatsayısı x Ağırlık) + BoyutEkFiyatı
-        var pricePenka = configuration.GetValue<decimal>("PricingService:PricePenka");
+        var pricePerKm = configuration.GetValue<decimal>("PricingService:PricePerKm");
         var weightMultiplier = configuration.GetValue<decimal>("PricingService:WeightMultiplier");
         var minimumPrice = configuration.GetValue<decimal>("PricingService:MinimumPrice");
 
@@ -166,7 +166,7 @@ public class OrdersController(
             _ => 0m
         };
 
-        var totalPrice = (distanceKm * pricePenka) + (weightMultiplier * packageWeight) + sizeCharge;
+        var totalPrice = (distanceKm * pricePerKm) + (weightMultiplier * packageWeight) + sizeCharge;
         return Math.Round(Math.Max(totalPrice, minimumPrice), 2);
     }
 }
