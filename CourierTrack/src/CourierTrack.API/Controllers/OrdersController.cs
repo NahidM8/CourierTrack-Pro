@@ -1,5 +1,6 @@
 ﻿namespace CourierTrack.API.Controllers;
 
+[Authorize]
 [Route("api/v1/orders")]
 [ApiController]
 public class OrdersController(
