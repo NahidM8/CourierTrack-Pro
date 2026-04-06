@@ -1,5 +1,3 @@
-using CourierTrack.Domain.Enums;
-
 namespace CourierTrack.Application.DTOs;
 
 public record RegisterRequestDto(

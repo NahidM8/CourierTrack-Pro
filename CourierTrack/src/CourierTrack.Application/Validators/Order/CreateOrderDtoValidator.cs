@@ -1,7 +1,4 @@
-﻿using CourierTrack.Application.DTOs;
-using FluentValidation;
-
-namespace CourierTrack.Application.Validators.Order;
+﻿namespace CourierTrack.Application.Validators.Order;
 
 public class CreateOrderDtoValidator : AbstractValidator<CreateOrderDto>
 {

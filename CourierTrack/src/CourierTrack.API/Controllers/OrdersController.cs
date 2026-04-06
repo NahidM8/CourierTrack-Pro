@@ -6,8 +6,8 @@
 public class OrdersController(
     IOrderService orderService,
     IValidator<CreateOrderDto> createOrderValidator,
-    IValidator<UpdateOrderDto> updateOrderValidator,
-    IConfiguration configuration) : ControllerBase
+    IValidator<UpdateOrderDto> updateOrderValidator
+    ) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<IEnumerable<OrderDto>>> GetAll()
@@ -23,6 +23,7 @@ public class OrdersController(
         return order is null ? NotFound() : Ok(order);
     }
 
+    [AllowAnonymous]
     [HttpGet("tracking/{trackingNumber}")]
     public async Task<ActionResult<OrderDto>> GetByTrackingNumber(string trackingNumber)
     {
@@ -51,9 +52,7 @@ public class OrdersController(
         if (!validationResult.IsValid)
             return BadRequest(validationResult.Errors);
 
-        var pricingOptions = GetPricingOptions();
-        var createdOrder = await orderService.CreateOrderAsync(request, pricingOptions);
-
+        var createdOrder = await orderService.CreateOrderAsync(request);
         return CreatedAtAction(nameof(GetById), new { id = createdOrder.Id }, createdOrder);
     }
 
@@ -87,18 +86,5 @@ public class OrdersController(
         {
             return BadRequest(ex.Message);
         }
-    }
-
-    private PricingOptions GetPricingOptions()
-    {
-        return new PricingOptions(
-            PricePerKm: configuration.GetValue<decimal>("PricingService:PricePerKm"),
-            WeightMultiplier: configuration.GetValue<decimal>("PricingService:WeightMultiplier"),
-            MinimumPrice: configuration.GetValue<decimal>("PricingService:MinimumPrice"),
-            SmallPackageCharge: configuration.GetValue<decimal>("PricingService:PackageSizes:Small"),
-            MediumPackageCharge: configuration.GetValue<decimal>("PricingService:PackageSizes:Medium"),
-            LargePackageCharge: configuration.GetValue<decimal>("PricingService:PackageSizes:Large"),
-            XLargePackageCharge: configuration.GetValue<decimal>("PricingService:PackageSizes:XLarge")
-        );
     }
 }

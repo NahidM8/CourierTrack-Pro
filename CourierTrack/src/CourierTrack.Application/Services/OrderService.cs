@@ -1,14 +1,19 @@
-﻿namespace CourierTrack.Application.Services;
+﻿using CourierTrack.Application.Options;
+using Microsoft.Extensions.Options;
+
+namespace CourierTrack.Application.Services;
 
 public class OrderService : IOrderService
 {
     private readonly IOrderRepository _orderRepository;
     private readonly IMapper _mapper;
+    private readonly PricingOptions _pricingOptions;
 
-    public OrderService(IOrderRepository orderRepository, IMapper mapper)
+    public OrderService(IOrderRepository orderRepository, IMapper mapper, IOptions<PricingOptions> pricingOptions)
     {
         _orderRepository = orderRepository;
         _mapper = mapper;
+        _pricingOptions = pricingOptions.Value;
     }
 
     public async Task<IEnumerable<OrderDto>> GetAllAsync()
@@ -41,7 +46,7 @@ public class OrderService : IOrderService
         return _mapper.Map<IEnumerable<OrderDto>>(orders);
     }
 
-    public async Task<OrderDto> CreateOrderAsync(CreateOrderDto request, PricingOptions pricingOptions)
+    public async Task<OrderDto> CreateOrderAsync(CreateOrderDto request)
     {
         var estimatedDistanceKm = CalculateDistanceKm(
             request.PickupLatitude,
@@ -66,7 +71,7 @@ public class OrderService : IOrderService
             PackageSize = request.PackageSize,
             EstimatedDistanceKm = estimatedDistanceKm,
             EstimatedDuration = CalculateEstimatedDuration(estimatedDistanceKm),
-            Price = CalculatePrice(estimatedDistanceKm, request.PackageWeight, request.PackageSize, pricingOptions),
+            Price = CalculatePrice(estimatedDistanceKm, request.PackageWeight, request.PackageSize, _pricingOptions),
             Status = OrderStatus.Created
         };
 
@@ -83,10 +88,7 @@ public class OrderService : IOrderService
         if (order.Status == OrderStatus.Cancelled)
             throw new InvalidOperationException("Cancelled orders cannot be updated.");
 
-        order.CourierId = request.CourierId;
         order.Status = request.Status;
-        order.PickedUpAt = request.PickedUpAt;
-        order.DeliveredAt = request.DeliveredAt;
 
         if (order.Status == OrderStatus.PickedUp)
             order.PickedUpAt ??= DateTime.UtcNow;
