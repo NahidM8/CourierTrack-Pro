@@ -1,6 +1,6 @@
+using CourierTrack.Application.Interfaces;
 using CourierTrack.Domain.Entities;
 using CourierTrack.Infrastructure.Data.Context;
-using CourierTrack.Infrastructure.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace CourierTrack.Infrastructure.Repositories.Implementations;

@@ -1,0 +1,9 @@
+﻿global using AutoMapper;
+global using CourierTrack.Application.Services;
+global using CourierTrack.Application.Validators.Order;
+global using FluentValidation;
+global using Microsoft.Extensions.DependencyInjection;
+global using CourierTrack.Application.DTOs;
+global using CourierTrack.Application.Interfaces;
+global using CourierTrack.Domain.Entities;
+global using CourierTrack.Domain.Enums;

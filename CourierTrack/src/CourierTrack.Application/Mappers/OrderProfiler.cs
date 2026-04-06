@@ -1,8 +1,4 @@
-﻿using AutoMapper;
-using CourierTrack.Application.DTOs;
-using CourierTrack.Domain.Entities;
-
-namespace CourierTrack.Application.Mappers;
+﻿namespace CourierTrack.Application.Mappers;
 
 public class OrderProfiler : Profile
 {
