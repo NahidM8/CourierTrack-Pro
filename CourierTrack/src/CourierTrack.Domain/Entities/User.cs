@@ -11,4 +11,5 @@ public class User : IdentityUser<Guid>
     public bool IsActive { get; set; } = true;
 
     public Courier? Courier { get; set; }
+    public ICollection<RefreshToken> RefreshTokens { get; set; } = [];
 }
