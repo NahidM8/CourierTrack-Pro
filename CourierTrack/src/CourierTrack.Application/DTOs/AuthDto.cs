@@ -23,3 +23,18 @@ public record AuthResponseDto(
     string RefreshToken,
     DateTime RefreshTokenExpiresAt
     );
+
+public record ForgotPasswordRequestDto(
+    string Email
+    );
+
+public record ForgotPasswordResponseDto(
+    string Message,
+    string ResetToken
+    );
+
+public record ChangePasswordRequestDto(
+    string CurrentPassword,
+    string NewPassword,
+    string ConfirmPassword
+    );
