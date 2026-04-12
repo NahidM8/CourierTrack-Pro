@@ -1,14 +1,4 @@
-﻿using CourierTrack.Application.Interfaces;
-using CourierTrack.Application.Options;
-using CourierTrack.Domain.Entities;
-using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text;
-
-namespace CourierTrack.Infrastructure.Services;
+﻿namespace CourierTrack.Infrastructure.Services;
 
 public class JwtService : IJwtService
 {

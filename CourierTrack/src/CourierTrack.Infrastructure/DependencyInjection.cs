@@ -1,11 +1,5 @@
-using CourierTrack.Application.Interfaces;
-using CourierTrack.Domain.Entities;
-using CourierTrack.Infrastructure.Data.Context;
 using CourierTrack.Infrastructure.Repositories.Implementations;
-using CourierTrack.Infrastructure.Repositories.Interfaces;
 using CourierTrack.Infrastructure.Services;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 

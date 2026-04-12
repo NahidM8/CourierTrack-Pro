@@ -1,9 +1,4 @@
-﻿using CourierTrack.Domain.Entities;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore;
-
-namespace CourierTrack.Infrastructure.Data.Context;
+﻿namespace CourierTrack.Infrastructure.Data.Context;
 
 public class CourierTrackDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
 {

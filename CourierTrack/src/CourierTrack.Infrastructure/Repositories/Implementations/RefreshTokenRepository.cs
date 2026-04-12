@@ -1,8 +1,3 @@
-using CourierTrack.Application.Interfaces;
-using CourierTrack.Domain.Entities;
-using CourierTrack.Infrastructure.Data.Context;
-using Microsoft.EntityFrameworkCore;
-
 namespace CourierTrack.Infrastructure.Repositories.Implementations;
 
 public class RefreshTokenRepository : IRefreshTokenRepository
