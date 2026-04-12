@@ -29,8 +29,7 @@ public record ForgotPasswordRequestDto(
     );
 
 public record ForgotPasswordResponseDto(
-    string Message,
-    string ResetToken
+    string Message
     );
 
 public record ChangePasswordRequestDto(
