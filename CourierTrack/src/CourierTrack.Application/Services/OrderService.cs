@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Options;
+﻿using CourierTrack.Domain.Exceptions;
+using Microsoft.Extensions.Options;
 
 namespace CourierTrack.Application.Services;
 
@@ -21,16 +22,20 @@ public class OrderService : IOrderService
         return _mapper.Map<IEnumerable<OrderDto>>(orders);
     }
 
-    public async Task<OrderDto?> GetByIdAsync(Guid id)
+    public async Task<OrderDto> GetByIdAsync(Guid id)
     {
-        var order = await _orderRepository.GetByIdAsync(id);
-        return order is null ? null : _mapper.Map<OrderDto>(order);
+        var order = await _orderRepository.GetByIdAsync(id)
+            ?? throw new NotFoundException($"Order with id {id} not found.");
+
+        return _mapper.Map<OrderDto>(order);
     }
 
-    public async Task<OrderDto?> GetByTrackingNumberAsync(string trackingNumber)
+    public async Task<OrderDto> GetByTrackingNumberAsync(string trackingNumber)
     {
-        var order = await _orderRepository.GetByTrackingNumberAsync(trackingNumber);
-        return order is null ? null : _mapper.Map<OrderDto>(order);
+        var order = await _orderRepository.GetByTrackingNumberAsync(trackingNumber)
+            ?? throw new NotFoundException($"Order with tracking number {trackingNumber} not found.");
+
+        return _mapper.Map<OrderDto>(order);
     }
 
     public async Task<IEnumerable<OrderDto>> GetByCustomerIdAsync(Guid customerId)
@@ -82,10 +87,10 @@ public class OrderService : IOrderService
     {
         var order = await _orderRepository.GetByIdAsync(orderId);
         if (order is null)
-            throw new InvalidOperationException($"Order with id {orderId} not found.");
+            throw new NotFoundException($"Order with id {orderId} not found.");
 
         if (order.Status == OrderStatus.Cancelled)
-            throw new InvalidOperationException("Cancelled orders cannot be updated.");
+            throw new Domain.Exceptions.InvalidOperationException("Cancelled orders cannot be updated.");
 
         order.Status = request.Status;
 
@@ -103,13 +108,13 @@ public class OrderService : IOrderService
     {
         var order = await _orderRepository.GetByIdAsync(orderId);
         if (order is null)
-            throw new InvalidOperationException($"Order with id {orderId} not found.");
+            throw new NotFoundException($"Order with id {orderId} not found.");
 
         if (order.Status == OrderStatus.Delivered)
-            throw new InvalidOperationException("Delivered orders cannot be cancelled.");
+            throw new Domain.Exceptions.InvalidOperationException("Delivered orders cannot be cancelled.");
 
         if (order.Status == OrderStatus.Cancelled)
-            throw new InvalidOperationException("Order is already cancelled.");
+            throw new Domain.Exceptions.InvalidOperationException("Order is already cancelled.");
 
         order.Status = OrderStatus.Cancelled;
 

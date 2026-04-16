@@ -3,8 +3,8 @@
 public interface IOrderService
 {
     Task<IEnumerable<OrderDto>> GetAllAsync();
-    Task<OrderDto?> GetByIdAsync(Guid id);
-    Task<OrderDto?> GetByTrackingNumberAsync(string trackingNumber);
+    Task<OrderDto> GetByIdAsync(Guid id);
+    Task<OrderDto> GetByTrackingNumberAsync(string trackingNumber);
     Task<IEnumerable<OrderDto>> GetByCustomerIdAsync(Guid customerId);
     Task<IEnumerable<OrderDto>> GetByCourierIdAsync(Guid courierId);
     Task<OrderDto> CreateOrderAsync(CreateOrderDto request);
