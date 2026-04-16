@@ -1,8 +1,4 @@
-﻿using CourierTrack.Infrastructure.Data.Context;
-using CourierTrack.Infrastructure.Repositories.Interfaces;
-using Microsoft.EntityFrameworkCore;
-
-namespace CourierTrack.Infrastructure.Repositories.Implementations;
+﻿namespace CourierTrack.Infrastructure.Repositories.Implementations;
 
 public class Repository<T>(CourierTrackDbContext context) : IRepository<T> where T : class
 {

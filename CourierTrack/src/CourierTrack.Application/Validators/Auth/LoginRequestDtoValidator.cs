@@ -1,6 +1,3 @@
-using CourierTrack.Application.DTOs;
-using FluentValidation;
-
 namespace CourierTrack.Application.Validators.Auth;
 
 public class LoginRequestDtoValidator : AbstractValidator<LoginRequestDto>

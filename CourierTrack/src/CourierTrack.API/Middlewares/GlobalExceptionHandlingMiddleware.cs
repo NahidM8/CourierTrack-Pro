@@ -1,6 +1,4 @@
-﻿using CourierTrack.Domain.Common;
-
-namespace CourierTrack.API.Middlewares;
+﻿namespace CourierTrack.API.Middlewares;
 
 public class GlobalExceptionHandlingMiddleware(
     RequestDelegate next,

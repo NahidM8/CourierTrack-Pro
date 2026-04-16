@@ -1,4 +1,4 @@
-﻿namespace CourierTrack.Infrastructure.Repositories.Interfaces;
+﻿namespace CourierTrack.Application.Interfaces;
 
 public interface IRepository<T> where T : class
 {

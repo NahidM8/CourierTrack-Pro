@@ -1,5 +1,3 @@
-using CourierTrack.Domain.Enums;
-
 namespace CourierTrack.Application.DTOs;
 
 public record RegisterRequestDto(
@@ -7,7 +5,8 @@ public record RegisterRequestDto(
     string Email,
     string Password,
     string PhoneNumber,
-    Role Role
+    Role Role,
+    VehicleType? VehicleType
     );
 
 public record LoginRequestDto(
@@ -24,4 +23,18 @@ public record AuthResponseDto(
     DateTime AccessTokenExpiresAt,
     string RefreshToken,
     DateTime RefreshTokenExpiresAt
+    );
+
+public record ForgotPasswordRequestDto(
+    string Email
+    );
+
+public record ForgotPasswordResponseDto(
+    string Message
+    );
+
+public record ChangePasswordRequestDto(
+    string CurrentPassword,
+    string NewPassword,
+    string ConfirmPassword
     );

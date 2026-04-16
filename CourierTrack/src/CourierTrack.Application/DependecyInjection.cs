@@ -1,15 +1,15 @@
-﻿using CourierTrack.Application.Validators.Order;
-using FluentValidation;
-using Microsoft.Extensions.DependencyInjection;
-
-namespace CourierTrack.Application;
+﻿namespace CourierTrack.Application;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddApplication(this IServiceCollection services)
+    public static IServiceCollection AddApplication(
+    this IServiceCollection services,
+    IConfiguration configuration)
     {
         services.AddAutoMapper(_ => { }, typeof(DependencyInjection).Assembly);
         services.AddValidatorsFromAssemblyContaining<CreateOrderDtoValidator>();
+        services.AddScoped<IOrderService, OrderService>();
+        services.Configure<PricingOptions>(configuration.GetSection(PricingOptions.SectionName));
         return services;
     }
 }

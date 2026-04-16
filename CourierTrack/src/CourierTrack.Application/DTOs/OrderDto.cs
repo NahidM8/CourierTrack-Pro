@@ -1,6 +1,4 @@
-﻿using CourierTrack.Domain.Enums;
-
-namespace CourierTrack.Application.DTOs;
+﻿namespace CourierTrack.Application.DTOs;
 
 public record OrderDto(
     Guid Id,

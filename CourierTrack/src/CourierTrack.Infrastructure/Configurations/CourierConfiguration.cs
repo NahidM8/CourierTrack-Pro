@@ -1,6 +1,4 @@
-﻿using CourierTrack.Domain.Entities;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
+﻿using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace CourierTrack.Infrastructure.Configurations;
 
