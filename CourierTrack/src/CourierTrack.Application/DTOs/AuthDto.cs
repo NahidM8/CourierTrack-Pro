@@ -5,7 +5,8 @@ public record RegisterRequestDto(
     string Email,
     string Password,
     string PhoneNumber,
-    Role Role
+    Role Role,
+    VehicleType? VehicleType
     );
 
 public record LoginRequestDto(

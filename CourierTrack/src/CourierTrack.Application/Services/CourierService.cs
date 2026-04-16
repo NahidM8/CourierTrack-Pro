@@ -3,22 +3,25 @@
 public class CourierService : ICourierService
 {
     private readonly ICourierRepository _courierRepository;
+    private readonly IMapper _mapper;
 
-    public CourierService(ICourierRepository courierRepository)
+    public CourierService(ICourierRepository courierRepository, IMapper mapper)
     {
         _courierRepository = courierRepository;
+        _mapper = mapper;
     }
     public Task AcceptOrderAsync(Guid courierId, Guid orderId)
     {
         throw new NotImplementedException();
     }
 
-    public Task<IEnumerable<CourierDto>> GetAllAsync()
+    public async Task<IEnumerable<CourierDto>> GetAllAsync()
     {
-        throw new NotImplementedException();
+        var couriers = await _courierRepository.GetAllAsync();
+        return _mapper.Map<IEnumerable<CourierDto>>(couriers);
     }
 
-    public Task<CourierDto> GetByIdAsync(Guid id)
+    public async Task<CourierDto> GetByIdAsync(Guid id)
     {
         throw new NotImplementedException();
     }
