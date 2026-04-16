@@ -7,7 +7,7 @@ public class RegisterRequestDtoValidator : AbstractValidator<RegisterRequestDto>
         RuleFor(x => x.Email)
             .NotEmpty().WithMessage("Email is required")
             .EmailAddress().WithMessage("Invalid email format")
-            .MaximumLength(100).WithMessage("Email must not exceed 100 characters");
+            .MaximumLength(256).WithMessage("Email must not exceed 256 characters");
 
         RuleFor(x => x.Password)
             .NotEmpty().WithMessage("Password is required")

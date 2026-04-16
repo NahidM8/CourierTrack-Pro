@@ -1,7 +1,4 @@
-﻿using CourierTrack.Application.Options;
-using Microsoft.Extensions.Configuration;
-
-namespace CourierTrack.Application;
+﻿namespace CourierTrack.Application;
 
 public static class DependencyInjection
 {

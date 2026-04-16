@@ -1,4 +1,3 @@
-using CourierTrack.Application.Options;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 

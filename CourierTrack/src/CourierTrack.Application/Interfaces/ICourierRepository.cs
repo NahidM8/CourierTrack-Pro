@@ -1,6 +1,4 @@
-using CourierTrack.Domain.Entities;
-
-namespace CourierTrack.Infrastructure.Repositories.Interfaces;
+namespace CourierTrack.Application.Interfaces;
 
 public interface ICourierRepository : IRepository<Courier>
 {
