@@ -12,3 +12,10 @@ public record CourierDto(
     decimal? Rating,
     int TotalDeliveries
 );
+public record UpdateAvailabilityDto(
+    bool IsAvailable
+);
+public record UpdateLocationDto(
+    double Latitude,
+    double Longitude
+);
