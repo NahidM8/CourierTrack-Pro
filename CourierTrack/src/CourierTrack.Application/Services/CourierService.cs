@@ -1,18 +1,18 @@
-﻿namespace CourierTrack.Application.Services;
+﻿using CourierTrack.Domain.Exceptions;
+
+namespace CourierTrack.Application.Services;
 
 public class CourierService : ICourierService
 {
     private readonly ICourierRepository _courierRepository;
+    private readonly IOrderRepository _orderRepository;
     private readonly IMapper _mapper;
 
-    public CourierService(ICourierRepository courierRepository, IMapper mapper)
+    public CourierService(ICourierRepository courierRepository, IOrderRepository orderRepository, IMapper mapper)
     {
         _courierRepository = courierRepository;
+        _orderRepository = orderRepository;
         _mapper = mapper;
-    }
-    public Task AcceptOrderAsync(Guid courierId, Guid orderId)
-    {
-        throw new NotImplementedException();
     }
 
     public async Task<IEnumerable<CourierDto>> GetAllAsync()
@@ -23,26 +23,83 @@ public class CourierService : ICourierService
 
     public async Task<CourierDto> GetByIdAsync(Guid id)
     {
-        throw new NotImplementedException();
+        var courier = await _courierRepository.GetByIdAsync(id)
+            ?? throw new NotFoundException($"Courier with id {id} not found.");
+
+        return _mapper.Map<CourierDto>(courier);
     }
 
-    public Task<IEnumerable<OrderDto>> GetCourierOrdersAsync(Guid id)
+    public async Task<CourierDto> GetByUserIdAsync(Guid userId)
     {
-        throw new NotImplementedException();
+        var courier = await _courierRepository.GetByUserIdAsync(userId)
+            ?? throw new NotFoundException($"Courier profile not found for user {userId}.");
+
+        return _mapper.Map<CourierDto>(courier);
     }
 
-    public Task RejectOrderAsync(Guid courierId, Guid orderId)
+    public async Task UpdateAvailabilityAsync(Guid id, bool isAvailable)
     {
-        throw new NotImplementedException();
+        var courier = await _courierRepository.GetByIdAsync(id)
+            ?? throw new NotFoundException($"Courier with id {id} not found.");
+
+        courier.IsAvailable = isAvailable;
+        await _courierRepository.UpdateAsync(courier);
     }
 
-    public Task UpdateAvailabilityAsync(Guid id, bool isAvailable)
+    public async Task UpdateLocationAsync(Guid id, double latitude, double longitude)
     {
-        throw new NotImplementedException();
+        var courier = await _courierRepository.GetByIdAsync(id)
+            ?? throw new NotFoundException($"Courier with id {id} not found.");
+
+        courier.CurrentLatitude = latitude;
+        courier.CurrentLongitude = longitude;
+        await _courierRepository.UpdateAsync(courier);
     }
 
-    public Task UpdateLocationAsync(Guid id, double latitude, double longitude)
+    public async Task<IEnumerable<OrderDto>> GetCourierOrdersAsync(Guid id)
     {
-        throw new NotImplementedException();
+        var courier = await _courierRepository.GetByIdAsync(id)
+            ?? throw new NotFoundException($"Courier with id {id} not found.");
+
+        var orders = await _orderRepository.GetByCourierIdAsync(courier.Id);
+        return _mapper.Map<IEnumerable<OrderDto>>(orders);
+    }
+
+    public async Task AcceptOrderAsync(Guid courierId, Guid orderId)
+    {
+        var courier = await _courierRepository.GetByIdAsync(courierId)
+            ?? throw new NotFoundException($"Courier with id {courierId} not found.");
+
+        var order = await _orderRepository.GetByIdAsync(orderId)
+            ?? throw new NotFoundException($"Order with id {orderId} not found.");
+
+        if (order.Status != OrderStatus.Pending)
+            throw new Domain.Exceptions.InvalidOperationException($"Order is not in a pending state.");
+
+        order.CourierId = courierId;
+        order.Status = OrderStatus.Assigned;
+        courier.IsAvailable = false;
+
+        await _orderRepository.UpdateAsync(order);
+        await _courierRepository.UpdateAsync(courier);
+    }
+
+    public async Task RejectOrderAsync(Guid courierId, Guid orderId)
+    {
+        var courier = await _courierRepository.GetByIdAsync(courierId)
+            ?? throw new NotFoundException($"Courier with id {courierId} not found.");
+
+        var order = await _orderRepository.GetByIdAsync(orderId)
+            ?? throw new NotFoundException($"Order with id {orderId} not found.");
+
+        if (order.CourierId != courierId)
+            throw new Domain.Exceptions.InvalidOperationException("This order is not assigned to this courier.");
+
+        order.CourierId = null;
+        order.Status = OrderStatus.Pending;
+        courier.IsAvailable = true;
+
+        await _orderRepository.UpdateAsync(order);
+        await _courierRepository.UpdateAsync(courier);
     }
 }
