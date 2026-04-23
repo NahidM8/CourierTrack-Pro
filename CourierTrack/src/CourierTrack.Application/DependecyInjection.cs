@@ -11,6 +11,7 @@ public static class DependencyInjection
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IOrderService, OrderService>();
         services.AddScoped<ICourierService, CourierService>();
+        services.AddScoped<IPaymentService, PaymentService>();
         services.AddScoped<IUserService, UserService>();
         services.Configure<PricingOptions>(configuration.GetSection(PricingOptions.SectionName));
         return services;

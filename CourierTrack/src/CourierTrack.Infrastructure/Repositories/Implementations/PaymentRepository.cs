@@ -1,6 +1,4 @@
-﻿using CourierTrack.Infrastructure.Repositories.Implementations;
-
-namespace CourierTrack.Infrastructure.Repositories;
+﻿namespace CourierTrack.Infrastructure.Repositories.Implementations;
 
 public class PaymentRepository(CourierTrackDbContext _context) : Repository<Payment>(_context), IPaymentRepository
 {
