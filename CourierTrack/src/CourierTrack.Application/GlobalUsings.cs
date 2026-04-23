@@ -6,6 +6,7 @@ global using CourierTrack.Application.Options;
 global using CourierTrack.Application.Services;
 global using CourierTrack.Application.Interfaces;
 global using CourierTrack.Application.Validators.Order;
+global using CourierTrack.Application.Validators.Payment;
 
 global using Microsoft.Extensions.DependencyInjection;
 global using Microsoft.Extensions.Configuration;

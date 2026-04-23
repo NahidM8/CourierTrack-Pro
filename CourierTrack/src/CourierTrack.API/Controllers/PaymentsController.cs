@@ -3,12 +3,21 @@
 [ApiController]
 [Route("api/v1/payments")]
 [Authorize]
-public class PaymentController(IPaymentService paymentService) : ControllerBase
+public class PaymentController(
+    IPaymentService paymentService,
+    IValidator<CreatePaymentIntentDto> createPaymentIntentValidator,
+    IValidator<ConfirmPaymentDto> confirmPaymentValidator,
+    IValidator<RefundPaymentDto> refundPaymentValidator
+    ) : ControllerBase
 {
     [HttpPost("create-intent")]
     [Authorize(Roles = "Customer")]
     public async Task<IActionResult> CreatePaymentIntent([FromBody] CreatePaymentIntentDto dto)
     {
+        var validationResult = await createPaymentIntentValidator.ValidateAsync(dto);
+        if (!validationResult.IsValid)
+            return BadRequest(validationResult.Errors);
+
         var payment = await paymentService.CreatePaymentIntentAsync(dto);
         return Ok(ApiResponse<PaymentDto>.SuccessResult(payment));
     }
@@ -17,6 +26,10 @@ public class PaymentController(IPaymentService paymentService) : ControllerBase
     [Authorize(Roles = "Customer")]
     public async Task<IActionResult> ConfirmPayment([FromBody] ConfirmPaymentDto dto)
     {
+        var validationResult = await confirmPaymentValidator.ValidateAsync(dto);
+        if (!validationResult.IsValid)
+            return BadRequest(validationResult.Errors);
+
         var payment = await paymentService.ConfirmPaymentAsync(dto);
         return Ok(ApiResponse<PaymentDto>.SuccessResult(payment));
     }
@@ -43,6 +56,10 @@ public class PaymentController(IPaymentService paymentService) : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Refund(Guid id, [FromBody] RefundPaymentDto dto)
     {
+        var validationResult = await refundPaymentValidator.ValidateAsync(dto);
+        if (!validationResult.IsValid)
+            return BadRequest(validationResult.Errors);
+
         var payment = await paymentService.RefundAsync(id, dto);
         return Ok(ApiResponse<PaymentDto>.SuccessResult(payment));
     }
