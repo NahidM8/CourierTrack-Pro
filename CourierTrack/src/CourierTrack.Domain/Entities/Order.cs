@@ -1,7 +1,4 @@
-﻿using CourierTrack.Domain.Common;
-using CourierTrack.Domain.Enums;
-
-namespace CourierTrack.Domain.Entities;
+﻿namespace CourierTrack.Domain.Entities;
 
 public class Order : AuditableEntity
 {
