@@ -6,12 +6,18 @@ namespace CourierTrack.Application.Services;
 public class OrderService : IOrderService
 {
     private readonly IOrderRepository _orderRepository;
+    private readonly ICourierRepository _courierRepository;
     private readonly IMapper _mapper;
     private readonly PricingOptions _pricingOptions;
 
-    public OrderService(IOrderRepository orderRepository, IMapper mapper, IOptions<PricingOptions> pricingOptions)
+    public OrderService(
+        IOrderRepository orderRepository,
+        ICourierRepository courierRepository,
+        IMapper mapper,
+        IOptions<PricingOptions> pricingOptions)
     {
         _orderRepository = orderRepository;
+        _courierRepository = courierRepository;
         _mapper = mapper;
         _pricingOptions = pricingOptions.Value;
     }
@@ -83,14 +89,23 @@ public class OrderService : IOrderService
         return _mapper.Map<OrderDto>(createdOrder);
     }
 
-    public async Task<OrderDto> UpdateOrderStatusAsync(Guid orderId, UpdateOrderDto request)
+    public async Task<OrderDto> UpdateOrderStatusAsync(Guid orderId, UpdateOrderDto request, Guid changedBy)
     {
-        var order = await _orderRepository.GetByIdAsync(orderId);
-        if (order is null)
-            throw new NotFoundException($"Order with id {orderId} not found.");
+        var order = await _orderRepository.GetByIdAsync(orderId)
+            ?? throw new NotFoundException($"Order with id {orderId} not found.");
 
         if (order.Status == OrderStatus.Cancelled)
             throw new Domain.Exceptions.InvalidOperationException("Cancelled orders cannot be updated.");
+
+        var history = new OrderStatusHistory
+        {
+            Id = Guid.NewGuid(),
+            OrderId = orderId,
+            OldStatus = order.Status,
+            NewStatus = request.Status,
+            ChangedBy = changedBy,
+            Note = request.Note
+        };
 
         order.Status = request.Status;
 
@@ -100,15 +115,16 @@ public class OrderService : IOrderService
         if (order.Status == OrderStatus.Delivered)
             order.DeliveredAt ??= DateTime.UtcNow;
 
-        var updatedOrder = await _orderRepository.UpdateAsync(order);
-        return _mapper.Map<OrderDto>(updatedOrder);
+        await _orderRepository.UpdateAsync(order);
+        await _orderRepository.AddStatusHistoryAsync(history);
+
+        return _mapper.Map<OrderDto>(order);
     }
 
-    public async Task<OrderDto> CancelOrderAsync(Guid orderId)
+    public async Task<OrderDto> CancelOrderAsync(Guid orderId, Guid changedBy)
     {
-        var order = await _orderRepository.GetByIdAsync(orderId);
-        if (order is null)
-            throw new NotFoundException($"Order with id {orderId} not found.");
+        var order = await _orderRepository.GetByIdAsync(orderId)
+            ?? throw new NotFoundException($"Order with id {orderId} not found.");
 
         if (order.Status == OrderStatus.Delivered)
             throw new Domain.Exceptions.InvalidOperationException("Delivered orders cannot be cancelled.");
@@ -116,10 +132,63 @@ public class OrderService : IOrderService
         if (order.Status == OrderStatus.Cancelled)
             throw new Domain.Exceptions.InvalidOperationException("Order is already cancelled.");
 
+        var history = new OrderStatusHistory
+        {
+            Id = Guid.NewGuid(),
+            OrderId = orderId,
+            OldStatus = order.Status,
+            NewStatus = OrderStatus.Cancelled,
+            ChangedBy = changedBy,
+            Note = "Order cancelled by user."
+        };
+
         order.Status = OrderStatus.Cancelled;
 
-        var updatedOrder = await _orderRepository.UpdateAsync(order);
-        return _mapper.Map<OrderDto>(updatedOrder);
+        await _orderRepository.UpdateAsync(order);
+        await _orderRepository.AddStatusHistoryAsync(history);
+
+        return _mapper.Map<OrderDto>(order);
+    }
+
+    public async Task<IEnumerable<OrderStatusHistoryDto>> GetStatusHistoryAsync(Guid orderId)
+    {
+        var order = await _orderRepository.GetByIdAsync(orderId)
+            ?? throw new NotFoundException($"Order with id {orderId} not found.");
+
+        var history = await _orderRepository.GetStatusHistoryAsync(order.Id);
+        return _mapper.Map<IEnumerable<OrderStatusHistoryDto>>(history);
+    }
+
+    public async Task<OrderDto> RateCourierAsync(Guid orderId, RateCourierDto request, Guid customerId)
+    {
+        if (request.Rating is < 1 or > 5)
+            throw new Domain.Exceptions.InvalidOperationException("Rating must be between 1 and 5.");
+
+        var order = await _orderRepository.GetByIdAsync(orderId)
+            ?? throw new NotFoundException($"Order with id {orderId} not found.");
+
+        if (order.CustomerId != customerId)
+            throw new Domain.Exceptions.InvalidOperationException("You can only rate your own order.");
+
+        if (order.Status != OrderStatus.Delivered)
+            throw new Domain.Exceptions.InvalidOperationException("Courier can only be rated after delivery.");
+
+        if (!order.CourierId.HasValue)
+            throw new Domain.Exceptions.InvalidOperationException("Order has no assigned courier.");
+
+        var courier = await _courierRepository.GetByIdAsync(order.CourierId.Value)
+            ?? throw new NotFoundException($"Courier with id {order.CourierId.Value} not found.");
+
+        var ratingCount = courier.TotalDeliveries;
+        var currentAverage = courier.Rating ?? 0m;
+        var updatedAverage = ((currentAverage * ratingCount) + request.Rating) / (ratingCount + 1);
+
+        courier.TotalDeliveries = ratingCount + 1;
+        courier.Rating = Math.Round(updatedAverage, 2);
+
+        await _courierRepository.UpdateAsync(courier);
+
+        return _mapper.Map<OrderDto>(order);
     }
 
     private static string GenerateTrackingNumber()
@@ -147,9 +216,9 @@ public class OrderService : IOrderService
     private static string CalculateEstimatedDuration(decimal distanceKm)
     {
         const decimal averageSpeedKmPerHour = 35m;
-        var totalMinutes = Math.Ceiling((distanceKm / averageSpeedKmPerHour) * 60);
-        var hours = (int)totalMinutes / 60;
-        var minutes = (int)totalMinutes % 60;
+        var totalMins = (int)Math.Ceiling((distanceKm / averageSpeedKmPerHour) * 60);
+        var hours = totalMins / 60;
+        var minutes = totalMins % 60;
         return $"{hours}h {minutes}m";
     }
 

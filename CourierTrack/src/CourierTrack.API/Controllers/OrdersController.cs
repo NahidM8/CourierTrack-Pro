@@ -1,4 +1,6 @@
-﻿namespace CourierTrack.API.Controllers;
+﻿using System.Security.Claims;
+
+namespace CourierTrack.API.Controllers;
 
 [Authorize]
 [Route("api/v1/orders")]
@@ -13,22 +15,22 @@ public class OrdersController(
     public async Task<ActionResult<IEnumerable<OrderDto>>> GetAll()
     {
         var orders = await orderService.GetAllAsync();
-        return Ok(orders);
+        return Ok(ApiResponse<IEnumerable<OrderDto>>.SuccessResult(orders));
     }
 
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<OrderDto>> GetById(Guid id)
     {
         var order = await orderService.GetByIdAsync(id);
-        return order is null ? NotFound() : Ok(order);
+        return Ok(ApiResponse<OrderDto>.SuccessResult(order));
     }
 
     [AllowAnonymous]
-    [HttpGet("tracking/{trackingNumber}")]
+    [HttpGet("track/{trackingNo}")]
     public async Task<ActionResult<OrderDto>> GetByTrackingNumber(string trackingNumber)
     {
         var order = await orderService.GetByTrackingNumberAsync(trackingNumber);
-        return order is null ? NotFound() : Ok(order);
+        return Ok(ApiResponse<OrderDto>.SuccessResult(order));
     }
 
     [HttpGet("customer/{customerId:guid}")]
@@ -50,41 +52,53 @@ public class OrdersController(
     {
         var validationResult = await createOrderValidator.ValidateAsync(request);
         if (!validationResult.IsValid)
-            return BadRequest(validationResult.Errors);
+        {
+            var errors = validationResult.Errors.Select(e => e.ErrorMessage).ToList();
+            return BadRequest(ApiResponse<object>.FailResult("Validation failed", "VALIDATION_ERROR", errors));
+        }
 
         var createdOrder = await orderService.CreateOrderAsync(request);
-        return CreatedAtAction(nameof(GetById), new { id = createdOrder.Id }, createdOrder);
+        return CreatedAtAction(nameof(GetById), new { id = createdOrder.Id }, ApiResponse<OrderDto>.SuccessResult(createdOrder));
     }
 
     [HttpPut("{id:guid}/status")]
-    public async Task<ActionResult<OrderDto>> UpdateStatus(Guid id, [FromBody] UpdateOrderDto request)
+    [Authorize(Roles = "Courier,Admin")]
+    public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] UpdateOrderDto dto)
     {
-        var validationResult = await updateOrderValidator.ValidateAsync(request);
+        var validationResult = await updateOrderValidator.ValidateAsync(dto);
         if (!validationResult.IsValid)
-            return BadRequest(validationResult.Errors);
+        {
+            var errors = validationResult.Errors.Select(e => e.ErrorMessage).ToList();
+            return BadRequest(ApiResponse<object>.FailResult("Validation failed", "VALIDATION_ERROR", errors));
+        }
 
-        try
-        {
-            var updatedOrder = await orderService.UpdateOrderStatusAsync(id, request);
-            return Ok(updatedOrder);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var order = await orderService.UpdateOrderStatusAsync(id, dto, userId);
+        return Ok(ApiResponse<OrderDto>.SuccessResult(order));
     }
 
     [HttpPut("{id:guid}/cancel")]
-    public async Task<ActionResult<OrderDto>> Cancel(Guid id)
+    [Authorize(Roles = "Customer")]
+    public async Task<IActionResult> Cancel(Guid id)
     {
-        try
-        {
-            var updatedOrder = await orderService.CancelOrderAsync(id);
-            return Ok(updatedOrder);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var order = await orderService.CancelOrderAsync(id, userId);
+        return Ok(ApiResponse<OrderDto>.SuccessResult(order));
+    }
+
+    [HttpGet("{id:guid}/history")]
+    public async Task<IActionResult> GetHistory(Guid id)
+    {
+        var history = await orderService.GetStatusHistoryAsync(id);
+        return Ok(ApiResponse<IEnumerable<OrderStatusHistoryDto>>.SuccessResult(history));
+    }
+
+    [HttpPost("{id:guid}/rate")]
+    [Authorize(Roles = "Customer")]
+    public async Task<IActionResult> RateCourier(Guid id, [FromBody] RateCourierDto dto)
+    {
+        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var result = await orderService.RateCourierAsync(id, dto, userId);
+        return Ok(ApiResponse<OrderDto>.SuccessResult(result));
     }
 }

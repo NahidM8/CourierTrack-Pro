@@ -8,4 +8,6 @@ public class OrderStatusHistory : BaseEntity
     public DateTime ChangedAt { get; set; }
     public Guid ChangedBy { get; set; }
     public string? Note { get; set; }
+
+    public Order? Order { get; set; } = null!;
 }

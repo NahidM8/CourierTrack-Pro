@@ -23,4 +23,5 @@ public class Order : AuditableEntity
 
     public User Customer { get; set; } = null!;
     public Courier? Courier { get; set; }
+    public ICollection<OrderStatusHistory> StatusHistory { get; set; } = [];
 }

@@ -8,6 +8,8 @@ public interface IOrderService
     Task<IEnumerable<OrderDto>> GetByCustomerIdAsync(Guid customerId);
     Task<IEnumerable<OrderDto>> GetByCourierIdAsync(Guid courierId);
     Task<OrderDto> CreateOrderAsync(CreateOrderDto request);
-    Task<OrderDto> UpdateOrderStatusAsync(Guid orderId, UpdateOrderDto request);
-    Task<OrderDto> CancelOrderAsync(Guid orderId);
+    Task<OrderDto> UpdateOrderStatusAsync(Guid orderId, UpdateOrderDto request, Guid changedBy);
+    Task<OrderDto> CancelOrderAsync(Guid orderId, Guid changedBy);
+    Task<IEnumerable<OrderStatusHistoryDto>> GetStatusHistoryAsync(Guid orderId);
+    Task<OrderDto> RateCourierAsync(Guid orderId, RateCourierDto request, Guid customerId);
 }
