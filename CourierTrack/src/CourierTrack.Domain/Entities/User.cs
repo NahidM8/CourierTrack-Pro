@@ -1,6 +1,3 @@
-using CourierTrack.Domain.Enums;
-using Microsoft.AspNetCore.Identity;
-
 namespace CourierTrack.Domain.Entities;
 
 public class User : IdentityUser<Guid>

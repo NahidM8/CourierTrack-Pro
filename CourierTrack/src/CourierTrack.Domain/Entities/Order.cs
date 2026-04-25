@@ -1,7 +1,4 @@
-﻿using CourierTrack.Domain.Common;
-using CourierTrack.Domain.Enums;
-
-namespace CourierTrack.Domain.Entities;
+﻿namespace CourierTrack.Domain.Entities;
 
 public class Order : AuditableEntity
 {
@@ -26,4 +23,5 @@ public class Order : AuditableEntity
 
     public User Customer { get; set; } = null!;
     public Courier? Courier { get; set; }
+    public ICollection<OrderStatusHistory> StatusHistory { get; set; } = [];
 }

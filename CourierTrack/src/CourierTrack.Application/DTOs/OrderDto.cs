@@ -40,5 +40,11 @@ public record UpdateOrderDto(
     Guid? CourierId,
     OrderStatus Status,
     DateTime? PickedUpAt,
-    DateTime? DeliveredAt
+    DateTime? DeliveredAt,
+    string? Note
+    );
+
+public record RateCourierDto(
+    int Rating,
+    string? Feedback
     );
