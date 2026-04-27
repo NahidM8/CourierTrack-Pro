@@ -99,7 +99,6 @@ public class OrderService : IOrderService
 
         var history = new OrderStatusHistory
         {
-            Id = Guid.NewGuid(),
             OrderId = orderId,
             OldStatus = order.Status,
             NewStatus = request.Status,
@@ -134,7 +133,6 @@ public class OrderService : IOrderService
 
         var history = new OrderStatusHistory
         {
-            Id = Guid.NewGuid(),
             OrderId = orderId,
             OldStatus = order.Status,
             NewStatus = OrderStatus.Cancelled,

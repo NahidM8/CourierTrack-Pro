@@ -1,7 +1,8 @@
 ﻿namespace CourierTrack.Domain.Entities;
 
-public class OrderStatusHistory : BaseEntity
+public class OrderStatusHistory
 {
+    public int Id { get; set; }
     public Guid OrderId { get; set; }
     public OrderStatus? OldStatus { get; set; }
     public OrderStatus NewStatus { get; set; }

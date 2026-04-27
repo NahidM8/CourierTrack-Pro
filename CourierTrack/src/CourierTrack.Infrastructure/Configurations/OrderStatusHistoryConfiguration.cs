@@ -8,6 +8,9 @@ public class OrderStatusHistoryConfiguration : IEntityTypeConfiguration<OrderSta
     {
         builder.HasKey(o => o.Id);
 
+        builder.Property(o => o.Id)
+            .ValueGeneratedOnAdd();
+
         builder.Property(o => o.OldStatus)
             .HasConversion<string>()
             .IsRequired(false);
