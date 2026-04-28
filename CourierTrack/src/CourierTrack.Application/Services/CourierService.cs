@@ -73,8 +73,8 @@ public class CourierService : ICourierService
         var order = await _orderRepository.GetByIdAsync(orderId)
             ?? throw new NotFoundException($"Order with id {orderId} not found.");
 
-        if (order.Status != OrderStatus.Pending)
-            throw new Domain.Exceptions.InvalidOperationException($"Order is not in a pending state.");
+        if (order.Status != OrderStatus.Assigned)
+            throw new Domain.Exceptions.InvalidOperationException($"Order is not in an assigned state.");
 
         order.CourierId = courierId;
         order.Status = OrderStatus.Assigned;
@@ -92,7 +92,7 @@ public class CourierService : ICourierService
         var order = await _orderRepository.GetByIdAsync(orderId)
             ?? throw new NotFoundException($"Order with id {orderId} not found.");
 
-        if (order.CourierId != courierId)
+        if (order.Status != OrderStatus.Assigned || order.CourierId != courierId)
             throw new Domain.Exceptions.InvalidOperationException("This order is not assigned to this courier.");
 
         order.CourierId = null;

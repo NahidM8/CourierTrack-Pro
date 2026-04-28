@@ -11,4 +11,5 @@ public class Courier : BaseEntity
     public int TotalDeliveries { get; set; }
 
     public User User { get; set; } = null!;
+    public ICollection<CourierRating> Ratings { get; set; } = [];
 }

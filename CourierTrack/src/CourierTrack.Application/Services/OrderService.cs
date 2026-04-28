@@ -1,4 +1,5 @@
 ﻿using CourierTrack.Domain.Exceptions;
+using CourierTrack.Application.Utilities;
 using Microsoft.Extensions.Options;
 
 namespace CourierTrack.Application.Services;
@@ -58,7 +59,7 @@ public class OrderService : IOrderService
 
     public async Task<OrderDto> CreateOrderAsync(CreateOrderDto request)
     {
-        var estimatedDistanceKm = CalculateDistanceKm(
+        var estimatedDistanceKm = GeoUtils.CalculateDistanceKm(
             request.PickupLatitude,
             request.PickupLongitude,
             request.DeliveryLatitude,
@@ -194,22 +195,6 @@ public class OrderService : IOrderService
         var randomNumber = Guid.NewGuid().ToString("N")[..8].ToUpperInvariant();
         return $"CT-{randomNumber}";
     }
-
-    private static decimal CalculateDistanceKm(double lat1, double lon1, double lat2, double lon2)
-    {
-        const double earthRadiusKm = 6371;
-        var dLat = DegreesToRadians(lat2 - lat1);
-        var dLon = DegreesToRadians(lon2 - lon1);
-
-        var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2)
-                + Math.Cos(DegreesToRadians(lat1)) * Math.Cos(DegreesToRadians(lat2))
-                * Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
-
-        var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
-        return Math.Round((decimal)(earthRadiusKm * c), 2);
-    }
-
-    private static double DegreesToRadians(double degrees) => degrees * (Math.PI / 180.0);
 
     private static string CalculateEstimatedDuration(decimal distanceKm)
     {
