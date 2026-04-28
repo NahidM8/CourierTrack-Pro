@@ -12,6 +12,7 @@ public class CourierTrackDbContext : IdentityDbContext<User, IdentityRole<Guid>,
     public DbSet<RefreshToken> RefreshTokens { get; set; }
     public DbSet<Payment> Payments { get; set; }
     public DbSet<OrderStatusHistory> OrderStatusHistories { get; set; }
+    public DbSet<CourierRating> CourierRatings { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -17,6 +17,14 @@ public class OrderRepository(CourierTrackDbContext context) : Repository<Order>(
         return await context.Orders.Where(o => o.CourierId == courierId).ToListAsync();
     }
 
+    public async Task<IEnumerable<Order>> GetUnassignedOrdersAsync()
+    {
+        return await context.Orders
+            .Where(o => o.Status == OrderStatus.Pending || o.Status == OrderStatus.Created)
+            .OrderBy(o => o.CreatedAt)
+            .ToListAsync();
+    }
+
     public async Task<IEnumerable<OrderStatusHistory>> GetStatusHistoryAsync(Guid orderId)
     {
         return await context.OrderStatusHistories

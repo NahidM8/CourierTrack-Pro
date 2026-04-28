@@ -7,4 +7,5 @@ public interface IOrderRepository : IRepository<Order>
     Task<IEnumerable<Order>> GetByCourierIdAsync(Guid courierId);
     Task<IEnumerable<OrderStatusHistory>> GetStatusHistoryAsync(Guid orderId);
     Task AddStatusHistoryAsync(OrderStatusHistory history);
+    Task<IEnumerable<Order>> GetUnassignedOrdersAsync();
 }
