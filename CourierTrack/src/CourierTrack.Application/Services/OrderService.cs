@@ -8,17 +8,20 @@ public class OrderService : IOrderService
 {
     private readonly IOrderRepository _orderRepository;
     private readonly ICourierRepository _courierRepository;
+    private readonly ITrackingHubService _trackingHubService;
     private readonly IMapper _mapper;
     private readonly PricingOptions _pricingOptions;
 
     public OrderService(
         IOrderRepository orderRepository,
         ICourierRepository courierRepository,
+        ITrackingHubService trackingHubService,
         IMapper mapper,
         IOptions<PricingOptions> pricingOptions)
     {
         _orderRepository = orderRepository;
         _courierRepository = courierRepository;
+        _trackingHubService = trackingHubService;
         _mapper = mapper;
         _pricingOptions = pricingOptions.Value;
     }
@@ -109,14 +112,19 @@ public class OrderService : IOrderService
 
         order.Status = request.Status;
 
-        if (order.Status == OrderStatus.PickedUp)
+        if (order.Status == OrderStatus.PickedUp) 
+        {
             order.PickedUpAt ??= DateTime.UtcNow;
+            await _trackingHubService.NotifyOrderPickedUpAsync(order.Id);
+        }
 
         if (order.Status == OrderStatus.Delivered)
             order.DeliveredAt ??= DateTime.UtcNow;
 
         await _orderRepository.UpdateAsync(order);
         await _orderRepository.AddStatusHistoryAsync(history);
+
+        await _trackingHubService.NotifyOrderStatusUpdatedAsync(order.Id, order.Status);
 
         return _mapper.Map<OrderDto>(order);
     }
