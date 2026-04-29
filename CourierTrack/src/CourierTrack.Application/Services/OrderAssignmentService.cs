@@ -7,15 +7,18 @@ public class OrderAssignmentService : IOrderAssignmentService
 {
     private readonly IOrderRepository _orderRepository;
     private readonly ICourierRepository _courierRepository;
+    private readonly ITrackingHubService _trackingHubService;
     private readonly IMapper _mapper;
 
     public OrderAssignmentService(
         IOrderRepository orderRepository,
         ICourierRepository courierRepository,
+        ITrackingHubService trackingHubService,
         IMapper mapper)
     {
         _orderRepository = orderRepository;
         _courierRepository = courierRepository;
+        _trackingHubService = trackingHubService;
         _mapper = mapper;
     }
 
@@ -39,6 +42,8 @@ public class OrderAssignmentService : IOrderAssignmentService
 
         await _orderRepository.UpdateAsync(order);
         await _courierRepository.UpdateAsync(courier);
+
+        await _trackingHubService.NotifyNewOrderAssignedAsync(courierId, orderId);
 
         return _mapper.Map<OrderDto>(order);
     }

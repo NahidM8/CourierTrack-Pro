@@ -6,12 +6,14 @@ public class CourierService : ICourierService
 {
     private readonly ICourierRepository _courierRepository;
     private readonly IOrderRepository _orderRepository;
+    private readonly ITrackingHubService _trackingHubService;
     private readonly IMapper _mapper;
 
-    public CourierService(ICourierRepository courierRepository, IOrderRepository orderRepository, IMapper mapper)
+    public CourierService(ICourierRepository courierRepository, IOrderRepository orderRepository, ITrackingHubService trackingHubService, IMapper mapper)
     {
         _courierRepository = courierRepository;
         _orderRepository = orderRepository;
+        _trackingHubService = trackingHubService;
         _mapper = mapper;
     }
 
@@ -54,6 +56,8 @@ public class CourierService : ICourierService
         courier.CurrentLatitude = latitude;
         courier.CurrentLongitude = longitude;
         await _courierRepository.UpdateAsync(courier);
+
+        await _trackingHubService.NotifyCourierLocationUpdatedAsync(courier.Id, latitude, longitude);
     }
 
     public async Task<IEnumerable<OrderDto>> GetCourierOrdersAsync(Guid id)

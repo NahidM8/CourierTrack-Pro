@@ -1,5 +1,6 @@
 ﻿namespace CourierTrack.API.Hubs;
 
+[Authorize]
 public class TrackingHub : Hub
 {
     public async Task JoinOrderGroup(string orderId)
