@@ -1,4 +1,5 @@
 ﻿using CourierTrack.Domain.Exceptions;
+using CourierTrack.Domain.Common;
 
 namespace CourierTrack.Application.Services;
 
@@ -15,6 +16,18 @@ public class CourierService : ICourierService
         _orderRepository = orderRepository;
         _trackingHubService = trackingHubService;
         _mapper = mapper;
+    }
+
+    public async Task<PagedResult<CourierDto>> GetAllPagedAsync(CourierFilterDto filter)
+    {
+        var pagedCouriers = await _courierRepository.GetAllPagedAsync(filter);
+        return new PagedResult<CourierDto>
+        {
+            Data = _mapper.Map<IEnumerable<CourierDto>>(pagedCouriers.Data),
+            Page = pagedCouriers.Page,
+            PageSize = pagedCouriers.PageSize,
+            TotalCount = pagedCouriers.TotalCount
+        };
     }
 
     public async Task<IEnumerable<CourierDto>> GetAllAsync()

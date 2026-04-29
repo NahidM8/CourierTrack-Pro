@@ -8,10 +8,10 @@ namespace CourierTrack.API.Controllers
     {
         [HttpGet]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAllPaged([FromQuery] CourierFilterDto filter)
         {
-            var couriers = await courierService.GetAllAsync();
-            return Ok(ApiResponse<IEnumerable<CourierDto>>.SuccessResult(couriers));
+            var couriers = await courierService.GetAllPagedAsync(filter);
+            return Ok(ApiResponse<PagedResult<CourierDto>>.SuccessResult(couriers));
         }
 
         [HttpGet("{id:guid}")]

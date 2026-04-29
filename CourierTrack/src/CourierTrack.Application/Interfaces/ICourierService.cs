@@ -1,9 +1,13 @@
-﻿namespace CourierTrack.Application.Interfaces;
+﻿using CourierTrack.Domain.Common;
+
+namespace CourierTrack.Application.Interfaces;
 
 public interface ICourierService
 {
-    Task<CourierDto> GetByIdAsync(Guid id);
+    Task<PagedResult<CourierDto>> GetAllPagedAsync(CourierFilterDto filter);
     Task<IEnumerable<CourierDto>> GetAllAsync();
+    Task<CourierDto> GetByIdAsync(Guid id);
+    Task<CourierDto> GetByUserIdAsync(Guid userId);
     Task UpdateAvailabilityAsync(Guid id, bool isAvailable);
     Task UpdateLocationAsync(Guid id, double latitude, double longitude);
     Task<IEnumerable<OrderDto>> GetCourierOrdersAsync(Guid id);

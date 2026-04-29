@@ -1,7 +1,10 @@
+using CourierTrack.Domain.Common;
+
 namespace CourierTrack.Application.Interfaces;
 
 public interface IOrderRepository : IRepository<Order>
 {
+    Task<PagedResult<Order>> GetAllPagedAsync(OrderFilterDto filter);
     Task<Order?> GetByTrackingNumberAsync(string trackingNumber);
     Task<IEnumerable<Order>> GetByCustomerIdAsync(Guid customerId);
     Task<IEnumerable<Order>> GetByCourierIdAsync(Guid courierId);

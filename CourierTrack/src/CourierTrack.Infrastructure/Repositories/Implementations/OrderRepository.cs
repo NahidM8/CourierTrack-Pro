@@ -1,7 +1,34 @@
+using CourierTrack.Application.DTOs;
+using CourierTrack.Domain.Common;
+
 namespace CourierTrack.Infrastructure.Repositories.Implementations;
 
 public class OrderRepository(CourierTrackDbContext context) : Repository<Order>(context), IOrderRepository
 {
+    public async Task<PagedResult<Order>> GetAllPagedAsync(OrderFilterDto filter)
+    {
+        var query = _dbSet.AsQueryable();
+
+        if (filter.CustomerId.HasValue)
+            query = query.Where(o => o.CustomerId == filter.CustomerId);
+
+        if (filter.CourierId.HasValue)
+            query = query.Where(o => o.CourierId == filter.CourierId);
+
+        if (filter.Status.HasValue)
+            query = query.Where(o => o.Status == filter.Status);
+
+        if (filter.FromDate.HasValue)
+            query = query.Where(o => o.CreatedAt >= filter.FromDate);
+
+        if (filter.ToDate.HasValue)
+            query = query.Where(o => o.CreatedAt <= filter.ToDate);
+
+        return await query
+            .OrderByDescending(o => o.CreatedAt)
+            .ToPagedResultAsync(filter.Page, filter.PageSize);
+    }
+
     public async Task<Order?> GetByTrackingNumberAsync(string trackingNumber)
     {
         return await context.Orders.FirstOrDefaultAsync(o => o.TrackingNumber == trackingNumber);
@@ -38,4 +65,5 @@ public class OrderRepository(CourierTrackDbContext context) : Repository<Order>(
         await context.OrderStatusHistories.AddAsync(history);
         await context.SaveChangesAsync();
     }
+
 }
