@@ -1,9 +1,4 @@
-﻿using CourierTrack.Domain.Exceptions;
-using CourierTrack.Application.Utilities;
-using CourierTrack.Domain.Common;
-using Microsoft.Extensions.Options;
-
-namespace CourierTrack.Application.Services;
+﻿namespace CourierTrack.Application.Services;
 
 public class OrderService : IOrderService
 {

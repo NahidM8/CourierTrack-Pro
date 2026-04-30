@@ -1,6 +1,3 @@
-using CourierTrack.Application.DTOs;
-using CourierTrack.Domain.Common;
-
 namespace CourierTrack.Infrastructure.Repositories.Implementations;
 
 public class CourierRepository(CourierTrackDbContext context) : Repository<Courier>(context), ICourierRepository

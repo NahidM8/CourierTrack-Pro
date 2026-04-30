@@ -1,5 +1,3 @@
-using CourierTrack.Domain.Exceptions;
-
 namespace CourierTrack.Application.Services;
 
 public class CourierRatingService : ICourierRatingService

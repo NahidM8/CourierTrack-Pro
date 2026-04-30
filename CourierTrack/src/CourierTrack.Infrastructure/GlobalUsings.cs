@@ -10,7 +10,9 @@ global using Microsoft.IdentityModel.Tokens;
 global using Microsoft.EntityFrameworkCore;
 
 global using CourierTrack.Domain.Entities;
+global using CourierTrack.Domain.Common;
 global using CourierTrack.Domain.Enums;
 global using CourierTrack.Infrastructure.Data.Context;
 global using CourierTrack.Application.Interfaces;
 global using CourierTrack.Application.Options;
+global using CourierTrack.Application.DTOs;

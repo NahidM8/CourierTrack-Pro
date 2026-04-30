@@ -1,8 +1,4 @@
-﻿using CourierTrack.Domain.Exceptions;
-using Microsoft.Extensions.Options;
-using Stripe;
-
-namespace CourierTrack.Application.Services;
+﻿namespace CourierTrack.Application.Services;
 
 public class PaymentService : IPaymentService
 {

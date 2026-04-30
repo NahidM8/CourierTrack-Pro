@@ -1,6 +1,4 @@
-﻿using CourierTrack.Domain.Common;
-
-namespace CourierTrack.Application.Interfaces;
+﻿namespace CourierTrack.Application.Interfaces;
 
 public interface IOrderService
 {

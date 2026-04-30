@@ -1,6 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-
-namespace CourierTrack.Domain.Common;
+﻿namespace CourierTrack.Domain.Common;
 
 public static class QueryableExtensions
 {

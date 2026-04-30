@@ -1,6 +1,3 @@
-using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Options;
-
 namespace CourierTrack.Application.Services;
 
 public class AuthService : IAuthService

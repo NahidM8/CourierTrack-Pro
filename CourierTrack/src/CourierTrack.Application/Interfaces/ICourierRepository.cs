@@ -1,5 +1,3 @@
-using CourierTrack.Domain.Common;
-
 namespace CourierTrack.Application.Interfaces;
 
 public interface ICourierRepository : IRepository<Courier>
