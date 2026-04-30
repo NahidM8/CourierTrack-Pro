@@ -1,6 +1,4 @@
-﻿using CourierTrack.Domain.Exceptions;
-
-namespace CourierTrack.Application.Services;
+﻿namespace CourierTrack.Application.Services;
 
 public class UserService : IUserService
 {

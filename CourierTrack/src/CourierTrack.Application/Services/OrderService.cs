@@ -1,6 +1,4 @@
-﻿using CourierTrack.Domain.Exceptions;
-using CourierTrack.Application.Utilities;
-using Microsoft.Extensions.Options;
+﻿using CourierTrack.Domain.Constants;
 
 namespace CourierTrack.Application.Services;
 
@@ -24,6 +22,18 @@ public class OrderService : IOrderService
         _trackingHubService = trackingHubService;
         _mapper = mapper;
         _pricingOptions = pricingOptions.Value;
+    }
+
+    public async Task<PagedResult<OrderDto>> GetAllPagedAsync(OrderFilterDto filter)
+    {
+        var pagedOrders = await _orderRepository.GetAllPagedAsync(filter);
+        return new PagedResult<OrderDto>
+        {
+            Data = _mapper.Map<IEnumerable<OrderDto>>(pagedOrders.Data),
+            Page = pagedOrders.Page,
+            PageSize = pagedOrders.PageSize,
+            TotalCount = pagedOrders.TotalCount
+        };
     }
 
     public async Task<IEnumerable<OrderDto>> GetAllAsync()
@@ -146,7 +156,7 @@ public class OrderService : IOrderService
             OldStatus = order.Status,
             NewStatus = OrderStatus.Cancelled,
             ChangedBy = changedBy,
-            Note = "Order cancelled by user."
+            Note = ApplicationConstants.Order.CancellationReason
         };
 
         order.Status = OrderStatus.Cancelled;
@@ -168,8 +178,8 @@ public class OrderService : IOrderService
 
     public async Task<OrderDto> RateCourierAsync(Guid orderId, RateCourierDto request, Guid customerId)
     {
-        if (request.Rating is < 1 or > 5)
-            throw new Domain.Exceptions.InvalidOperationException("Rating must be between 1 and 5.");
+        if (request.Rating is < ApplicationConstants.Rating.MinimumRating or > ApplicationConstants.Rating.MaximumRating)
+            throw new Domain.Exceptions.InvalidOperationException($"Rating must be between {ApplicationConstants.Rating.MinimumRating} and {ApplicationConstants.Rating.MaximumRating}.");
 
         var order = await _orderRepository.GetByIdAsync(orderId)
             ?? throw new NotFoundException($"Order with id {orderId} not found.");
@@ -200,14 +210,13 @@ public class OrderService : IOrderService
 
     private static string GenerateTrackingNumber()
     {
-        var randomNumber = Guid.NewGuid().ToString("N")[..8].ToUpperInvariant();
-        return $"CT-{randomNumber}";
+        var randomNumber = Guid.NewGuid().ToString("N")[..ApplicationConstants.Order.TrackingNumberRandomLength].ToUpperInvariant();
+        return $"{ApplicationConstants.Order.TrackingNumberPrefix}-{randomNumber}";
     }
 
     private static string CalculateEstimatedDuration(decimal distanceKm)
     {
-        const decimal averageSpeedKmPerHour = 35m;
-        var totalMins = (int)Math.Ceiling((distanceKm / averageSpeedKmPerHour) * 60);
+        var totalMins = (int)Math.Ceiling((distanceKm / ApplicationConstants.Order.AverageSpeedKmPerHour) * 60);
         var hours = totalMins / 60;
         var minutes = totalMins % 60;
         return $"{hours}h {minutes}m";

@@ -12,10 +12,10 @@ public class OrdersController(
     ) : ControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<OrderDto>>> GetAll()
+    public async Task<ActionResult<PagedResult<OrderDto>>> GetAllPaged([FromQuery] OrderFilterDto filter)
     {
-        var orders = await orderService.GetAllAsync();
-        return Ok(ApiResponse<IEnumerable<OrderDto>>.SuccessResult(orders));
+        var orders = await orderService.GetAllPagedAsync(filter);
+        return Ok(ApiResponse<PagedResult<OrderDto>>.SuccessResult(orders));
     }
 
     [HttpGet("{id:guid}")]

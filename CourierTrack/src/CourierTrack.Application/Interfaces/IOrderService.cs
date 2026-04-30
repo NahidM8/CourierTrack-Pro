@@ -2,6 +2,7 @@
 
 public interface IOrderService
 {
+    Task<PagedResult<OrderDto>> GetAllPagedAsync(OrderFilterDto filter);
     Task<IEnumerable<OrderDto>> GetAllAsync();
     Task<OrderDto> GetByIdAsync(Guid id);
     Task<OrderDto> GetByTrackingNumberAsync(string trackingNumber);

@@ -1,3 +1,5 @@
+using CourierTrack.Domain.Constants;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -11,10 +13,10 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 
-var jwtSection = builder.Configuration.GetSection("Jwt");
-var jwtIssuer = jwtSection["Issuer"] ?? throw new InvalidOperationException("Jwt:Issuer is not configured.");
-var jwtAudience = jwtSection["Audience"] ?? throw new InvalidOperationException("Jwt:Audience is not configured.");
-var jwtKey = jwtSection["Key"] ?? throw new InvalidOperationException("Jwt:Key is not configured.");
+var jwtSection = builder.Configuration.GetSection(ApplicationConstants.Jwt.ConfigurationSection);
+var jwtIssuer = jwtSection[ApplicationConstants.Jwt.IssuerKey] ?? throw new InvalidOperationException($"{ApplicationConstants.Jwt.ConfigurationSection}:{ApplicationConstants.Jwt.IssuerKey} is not configured.");
+var jwtAudience = jwtSection[ApplicationConstants.Jwt.AudienceKey] ?? throw new InvalidOperationException($"{ApplicationConstants.Jwt.ConfigurationSection}:{ApplicationConstants.Jwt.AudienceKey} is not configured.");
+var jwtKey = jwtSection[ApplicationConstants.Jwt.KeyProperty] ?? throw new InvalidOperationException($"{ApplicationConstants.Jwt.ConfigurationSection}:{ApplicationConstants.Jwt.KeyProperty} is not configured.");
 
 builder.Services.AddAuthentication(options =>
     {
@@ -40,9 +42,9 @@ builder.Services.AddAuthentication(options =>
         {
             OnMessageReceived = context =>
             {
-                var accessToken = context.Request.Query["access_token"];
+                var accessToken = context.Request.Query[ApplicationConstants.Jwt.AccessToken];
                 var path = context.HttpContext.Request.Path;
-                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs/tracking"))
+                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments(ApplicationConstants.Hubs.TrackingHubPath))
                     context.Token = accessToken;
                 return Task.CompletedTask;
             }
@@ -55,7 +57,7 @@ builder.Services.AddSwaggerGen(options =>
 {
     options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
     {
-        Name = "Authorization",
+        Name = ApplicationConstants.Headers.Authorization,
         Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
         Scheme = "bearer",
         BearerFormat = "JWT",
@@ -95,7 +97,7 @@ app.UseAuthorization();
 app.UseMiddleware<RequestResponseLoggingMiddleware>();
 app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
 
-app.MapHub<TrackingHub>("/hubs/tracking");
+app.MapHub<TrackingHub>(ApplicationConstants.Hubs.TrackingHubPath);
 
 app.MapControllers();
 

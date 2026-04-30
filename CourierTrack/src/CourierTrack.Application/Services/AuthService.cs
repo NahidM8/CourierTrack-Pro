@@ -1,6 +1,3 @@
-using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Options;
-
 namespace CourierTrack.Application.Services;
 
 public class AuthService : IAuthService
@@ -26,7 +23,7 @@ public class AuthService : IAuthService
     {
         var existingUser = await _userManager.FindByEmailAsync(request.Email);
         if (existingUser is not null)
-            throw new InvalidOperationException("User with this email already exists.");
+            throw new Domain.Exceptions.InvalidOperationException("User with this email already exists.");
 
         var user = new User
         {
@@ -42,7 +39,7 @@ public class AuthService : IAuthService
         if (!result.Succeeded)
         {
             var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-            throw new InvalidOperationException($"User creation failed: {errors}");
+            throw new Domain.Exceptions.InvalidOperationException($"User creation failed: {errors}");
         }
 
         await _userManager.AddToRoleAsync(user, request.Role.ToString());
@@ -102,7 +99,7 @@ public class AuthService : IAuthService
         var user = await _userManager.FindByIdAsync(userId.ToString());
         if (user is null)
         {
-            throw new InvalidOperationException("User not found.");
+            throw new Domain.Exceptions.InvalidOperationException("User not found.");
         }
 
         var passwordValid = await _userManager.CheckPasswordAsync(user, request.CurrentPassword);
@@ -115,7 +112,7 @@ public class AuthService : IAuthService
         if (!result.Succeeded)
         {
             var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-            throw new InvalidOperationException($"Password change failed: {errors}");
+            throw new Domain.Exceptions.InvalidOperationException($"Password change failed: {errors}");
         }
     }
 
