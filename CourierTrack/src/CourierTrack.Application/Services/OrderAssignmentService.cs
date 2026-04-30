@@ -1,3 +1,5 @@
+using CourierTrack.Domain.Constants;
+
 namespace CourierTrack.Application.Services;
 
 public class OrderAssignmentService : IOrderAssignmentService
@@ -89,7 +91,7 @@ public class OrderAssignmentService : IOrderAssignmentService
 
     private static bool IsVehicleSuitable(VehicleType vehicle, decimal weight, PackageSize size)
     {
-        if (size == PackageSize.XLarge || weight > 20)
+        if (size == PackageSize.XLarge || weight > ApplicationConstants.Assignment.HeavyPackageWeightThreshold)
             return vehicle is VehicleType.Car or VehicleType.Van;
         return true;
     }

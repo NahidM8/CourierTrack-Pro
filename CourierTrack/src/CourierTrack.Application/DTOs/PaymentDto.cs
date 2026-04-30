@@ -5,7 +5,7 @@ public record PaymentDto(
     Guid OrderId,
     decimal Amount,
     string Currency,
-    PaymentMethod PaymentMethod,
+    Domain.Enums.PaymentMethod PaymentMethod,
     PaymentStatus Status,
     string? StripePaymentIntentId,
     DateTime? PaidAt
@@ -13,7 +13,7 @@ public record PaymentDto(
 
 public record CreatePaymentIntentDto(
     Guid OrderId,
-    PaymentMethod PaymentMethod,
+    Domain.Enums.PaymentMethod PaymentMethod,
     string Currency
 );
 
