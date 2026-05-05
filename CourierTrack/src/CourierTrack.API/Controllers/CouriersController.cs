@@ -1,10 +1,11 @@
-﻿using System.Security.Claims;
+﻿using CourierTrack.Application.Services;
+using System.Security.Claims;
 
 namespace CourierTrack.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class CouriersController(ICourierService courierService) : ControllerBase
+    public class CouriersController(ICourierService courierService,ICourierRatingService courierRatingService) : ControllerBase
     {
         [HttpGet]
         [Authorize(Roles = "Admin")]
@@ -51,7 +52,7 @@ namespace CourierTrack.API.Controllers
         {
             var courierId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
             await courierService.AcceptOrderAsync(courierId, orderId);
-            return Ok(ApiResponse<object>.SuccessResult(null));
+            return Ok(ApiResponse<object>.SuccessResult(200));
         }
 
         [HttpPut("orders/{orderId:guid}/reject")]
@@ -60,7 +61,15 @@ namespace CourierTrack.API.Controllers
         {
             var courierId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
             await courierService.RejectOrderAsync(courierId, orderId);
-            return Ok(ApiResponse<object>.SuccessResult(null));
+            return Ok(ApiResponse<object>.SuccessResult(200));
+        }
+
+        [HttpGet("{id:guid}/ratings")]
+        [Authorize]
+        public async Task<IActionResult> GetCourierRatings(Guid id)
+        {
+            var ratings = await courierRatingService.GetCourierRatingsAsync(id);
+            return Ok(ApiResponse<IEnumerable<CourierRatingDto>>.SuccessResult(ratings));
         }
     }
 }

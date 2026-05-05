@@ -5,7 +5,6 @@ namespace CourierTrack.Application.Services;
 public class OrderService : IOrderService
 {
     private readonly IOrderRepository _orderRepository;
-    private readonly ICourierRepository _courierRepository;
     private readonly ITrackingHubService _trackingHubService;
     private readonly IMapper _mapper;
     private readonly PricingOptions _pricingOptions;
@@ -18,7 +17,6 @@ public class OrderService : IOrderService
         IOptions<PricingOptions> pricingOptions)
     {
         _orderRepository = orderRepository;
-        _courierRepository = courierRepository;
         _trackingHubService = trackingHubService;
         _mapper = mapper;
         _pricingOptions = pricingOptions.Value;
@@ -174,38 +172,6 @@ public class OrderService : IOrderService
 
         var history = await _orderRepository.GetStatusHistoryAsync(order.Id);
         return _mapper.Map<IEnumerable<OrderStatusHistoryDto>>(history);
-    }
-
-    public async Task<OrderDto> RateCourierAsync(Guid orderId, RateCourierDto request, Guid customerId)
-    {
-        if (request.Rating is < ApplicationConstants.Rating.MinimumRating or > ApplicationConstants.Rating.MaximumRating)
-            throw new Domain.Exceptions.InvalidOperationException($"Rating must be between {ApplicationConstants.Rating.MinimumRating} and {ApplicationConstants.Rating.MaximumRating}.");
-
-        var order = await _orderRepository.GetByIdAsync(orderId)
-            ?? throw new NotFoundException($"Order with id {orderId} not found.");
-
-        if (order.CustomerId != customerId)
-            throw new Domain.Exceptions.InvalidOperationException("You can only rate your own order.");
-
-        if (order.Status != OrderStatus.Delivered)
-            throw new Domain.Exceptions.InvalidOperationException("Courier can only be rated after delivery.");
-
-        if (!order.CourierId.HasValue)
-            throw new Domain.Exceptions.InvalidOperationException("Order has no assigned courier.");
-
-        var courier = await _courierRepository.GetByIdAsync(order.CourierId.Value)
-            ?? throw new NotFoundException($"Courier with id {order.CourierId.Value} not found.");
-
-        var ratingCount = courier.TotalDeliveries;
-        var currentAverage = courier.Rating ?? 0m;
-        var updatedAverage = ((currentAverage * ratingCount) + request.Rating) / (ratingCount + 1);
-
-        courier.TotalDeliveries = ratingCount + 1;
-        courier.Rating = Math.Round(updatedAverage, 2);
-
-        await _courierRepository.UpdateAsync(courier);
-
-        return _mapper.Map<OrderDto>(order);
     }
 
     private static string GenerateTrackingNumber()

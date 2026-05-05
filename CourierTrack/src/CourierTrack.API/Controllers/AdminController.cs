@@ -28,7 +28,7 @@ public class AdminController(
     public async Task<IActionResult> UpdateUserStatus(Guid id, [FromBody] UpdateUserStatusDto dto)
     {
         await userService.UpdateStatusAsync(id, dto.IsActive);
-        return Ok(ApiResponse<object>.SuccessResult(null));
+        return Ok(ApiResponse<object>.SuccessResult("Updated User status successfully"));
     }
 
     [HttpGet("dashboard")]
