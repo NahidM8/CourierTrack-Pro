@@ -2,9 +2,9 @@
 
 public class Order : AuditableEntity
 {
-    public Guid CustomerId { get; set; }
+    public Guid CustomerId { get; init; }
     public Guid? CourierId { get; set; }
-    public string TrackingNumber { get; set; } = null!;
+    public string TrackingNumber { get; init; } = null!;
     public string PickupAddress { get; set; } = null!;
     public double PickupLatitude { get; set; }
     public double PickupLongitude { get; set; }

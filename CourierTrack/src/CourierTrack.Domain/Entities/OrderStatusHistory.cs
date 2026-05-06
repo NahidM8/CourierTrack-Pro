@@ -2,8 +2,8 @@
 
 public class OrderStatusHistory
 {
-    public int Id { get; set; }
-    public Guid OrderId { get; set; }
+    public int Id { get; init; }
+    public Guid OrderId { get; init; }
     public OrderStatus? OldStatus { get; set; }
     public OrderStatus NewStatus { get; set; }
     public DateTime ChangedAt { get; set; }

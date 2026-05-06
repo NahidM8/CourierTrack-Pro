@@ -42,7 +42,6 @@ public class AuthService : IAuthService
             throw new Domain.Exceptions.InvalidOperationException($"User creation failed: {errors}");
         }
 
-        await _userManager.AddToRoleAsync(user, request.Role.ToString());
         return await GenerateAuthResponseAsync(user);
     }
 
@@ -118,7 +117,7 @@ public class AuthService : IAuthService
 
     private async Task<AuthResponseDto> GenerateAuthResponseAsync(User user)
     {
-        var roles = await _userManager.GetRolesAsync(user);
+        var roles = new List<string> { user.Role.ToString() };
         var accessToken = _jwtService.GenerateAccessToken(user, roles);
         var refreshToken = _jwtService.GenerateRefreshToken(user.Id);
 

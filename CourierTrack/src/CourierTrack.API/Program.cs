@@ -1,6 +1,3 @@
-using CourierTrack.Application.Interfaces.Hubs;
-using CourierTrack.Domain.Constants;
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -18,6 +15,32 @@ var jwtSection = builder.Configuration.GetSection(ApplicationConstants.Jwt.Confi
 var jwtIssuer = jwtSection[ApplicationConstants.Jwt.IssuerKey] ?? throw new InvalidOperationException($"{ApplicationConstants.Jwt.ConfigurationSection}:{ApplicationConstants.Jwt.IssuerKey} is not configured.");
 var jwtAudience = jwtSection[ApplicationConstants.Jwt.AudienceKey] ?? throw new InvalidOperationException($"{ApplicationConstants.Jwt.ConfigurationSection}:{ApplicationConstants.Jwt.AudienceKey} is not configured.");
 var jwtKey = jwtSection[ApplicationConstants.Jwt.KeyProperty] ?? throw new InvalidOperationException($"{ApplicationConstants.Jwt.ConfigurationSection}:{ApplicationConstants.Jwt.KeyProperty} is not configured.");
+
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<CourierTrackDbContext>();
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddFixedWindowLimiter("fixed", limiterOptions =>
+    {
+        limiterOptions.PermitLimit = 60;
+        limiterOptions.Window = TimeSpan.FromMinutes(1);
+        limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        limiterOptions.QueueLimit = 0;
+    });
+    options.RejectionStatusCode = 429;
+});
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:3000")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
 
 builder.Services.AddAuthentication(options =>
     {
@@ -91,15 +114,17 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseRateLimiter();
 app.UseHttpsRedirection();
+app.UseCors("AllowFrontend");
+app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
+
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.UseMiddleware<RequestResponseLoggingMiddleware>();
-app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
-
 app.MapHub<TrackingHub>(ApplicationConstants.Hubs.TrackingHubPath);
-
+app.MapHealthChecks("/health");
 app.MapControllers();
 
 app.Run();
