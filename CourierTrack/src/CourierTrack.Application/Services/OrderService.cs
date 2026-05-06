@@ -1,6 +1,4 @@
-﻿using CourierTrack.Domain.Constants;
-
-namespace CourierTrack.Application.Services;
+﻿namespace CourierTrack.Application.Services;
 
 public class OrderService : IOrderService
 {

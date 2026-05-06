@@ -1,6 +1,8 @@
 using AutoMapper;
 using CourierTrack.Application.DTOs;
-using CourierTrack.Application.Interfaces;
+using CourierTrack.Application.Interfaces.Hubs;
+using CourierTrack.Application.Interfaces.Repositories;
+using CourierTrack.Application.Interfaces.Services;
 using CourierTrack.Application.Options;
 using CourierTrack.Application.Services;
 using CourierTrack.Domain.Constants;
@@ -56,7 +58,6 @@ public class OrderServiceTests
     [Fact]
     public async Task CreateOrderAsync_ShouldGenerateTrackingNumber()
     {
-        // Arrange
         var customerId = Guid.NewGuid();
         var createOrderDto = new CreateOrderDto(
             CustomerId: customerId,
@@ -122,10 +123,8 @@ public class OrderServiceTests
             .Setup(x => x.Map<OrderDto>(It.IsAny<Order>()))
             .Returns(orderDto);
 
-        // Act
         var result = await _orderService.CreateOrderAsync(createOrderDto);
 
-        // Assert
         result.Should().NotBeNull();
         result.TrackingNumber.Should().NotBeNullOrEmpty();
         result.TrackingNumber.Should().StartWith(ApplicationConstants.Order.TrackingNumberPrefix + "-");
@@ -135,7 +134,6 @@ public class OrderServiceTests
     [Fact]
     public async Task CreateOrderAsync_ShouldCalculatePrice()
     {
-        // Arrange
         var customerId = Guid.NewGuid();
         var createOrderDto = new CreateOrderDto(
             CustomerId: customerId,
@@ -201,10 +199,8 @@ public class OrderServiceTests
             .Setup(x => x.Map<OrderDto>(It.IsAny<Order>()))
             .Returns(orderDto);
 
-        // Act
         var result = await _orderService.CreateOrderAsync(createOrderDto);
 
-        // Assert
         result.Should().NotBeNull();
         result.Price.Should().Be(40m);
         result.Price.Should().BeGreaterThanOrEqualTo(_pricingOptions.MinimumPrice);
@@ -213,7 +209,6 @@ public class OrderServiceTests
     [Fact]
     public async Task CreateOrderAsync_ShouldSetStatusToCreated()
     {
-        // Arrange
         var customerId = Guid.NewGuid();
         var createOrderDto = new CreateOrderDto(
             CustomerId: customerId,
@@ -279,10 +274,8 @@ public class OrderServiceTests
             .Setup(x => x.Map<OrderDto>(It.IsAny<Order>()))
             .Returns(orderDto);
 
-        // Act
         var result = await _orderService.CreateOrderAsync(createOrderDto);
 
-        // Assert
         result.Status.Should().Be(OrderStatus.Created);
     }
 
@@ -293,7 +286,6 @@ public class OrderServiceTests
     [Fact]
     public async Task UpdateOrderStatusAsync_ShouldThrow_WhenOrderIsCancelled()
     {
-        // Arrange
         var orderId = Guid.NewGuid();
         var changedBy = Guid.NewGuid();
         var cancelledOrder = new Order
@@ -325,7 +317,6 @@ public class OrderServiceTests
             .Setup(x => x.GetByIdAsync(orderId))
             .ReturnsAsync(cancelledOrder);
 
-        // Act & Assert
         await Assert.ThrowsAsync<Domain.Exceptions.InvalidOperationException>(
             () => _orderService.UpdateOrderStatusAsync(orderId, updateOrderDto, changedBy)
         );
@@ -334,7 +325,6 @@ public class OrderServiceTests
     [Fact]
     public async Task UpdateOrderStatusAsync_ShouldUpdateStatus()
     {
-        // Arrange
         var orderId = Guid.NewGuid();
         var changedBy = Guid.NewGuid();
         var order = new Order
@@ -408,11 +398,11 @@ public class OrderServiceTests
 
         _mockOrderRepository
             .Setup(x => x.UpdateAsync(It.IsAny<Order>()))
-            .Returns((Order _) => Task.CompletedTask);
+            .Returns<Order>(o => Task.FromResult(o));
 
         _mockOrderRepository
             .Setup(x => x.AddStatusHistoryAsync(It.IsAny<OrderStatusHistory>()))
-            .Returns((OrderStatusHistory _) => Task.CompletedTask);
+            .Returns(Task.CompletedTask);
 
         _mockTrackingHubService
             .Setup(x => x.NotifyOrderStatusUpdatedAsync(It.IsAny<Guid>(), It.IsAny<OrderStatus>()))
@@ -422,10 +412,8 @@ public class OrderServiceTests
             .Setup(x => x.Map<OrderDto>(It.IsAny<Order>()))
             .Returns(orderDto);
 
-        // Act
         var result = await _orderService.UpdateOrderStatusAsync(orderId, updateOrderDto, changedBy);
 
-        // Assert
         result.Should().NotBeNull();
         result.Status.Should().Be(OrderStatus.Pending);
         _mockOrderRepository.Verify(x => x.UpdateAsync(It.IsAny<Order>()), Times.Once);
@@ -435,7 +423,6 @@ public class OrderServiceTests
     [Fact]
     public async Task UpdateOrderStatusAsync_ShouldSetPickedUpAt_WhenStatusIsPickedUp()
     {
-        // Arrange
         var orderId = Guid.NewGuid();
         var changedBy = Guid.NewGuid();
         var order = new Order
@@ -511,11 +498,11 @@ public class OrderServiceTests
 
         _mockOrderRepository
             .Setup(x => x.UpdateAsync(It.IsAny<Order>()))
-            .Returns((Order _) => Task.CompletedTask);
+            .Returns<Order>(o => Task.FromResult(o));
 
         _mockOrderRepository
             .Setup(x => x.AddStatusHistoryAsync(It.IsAny<OrderStatusHistory>()))
-            .Returns((OrderStatusHistory _) => Task.CompletedTask);
+            .Returns(Task.CompletedTask);
 
         _mockTrackingHubService
             .Setup(x => x.NotifyOrderPickedUpAsync(It.IsAny<Guid>()))
@@ -529,12 +516,130 @@ public class OrderServiceTests
             .Setup(x => x.Map<OrderDto>(It.IsAny<Order>()))
             .Returns(orderDto);
 
-        // Act
         var result = await _orderService.UpdateOrderStatusAsync(orderId, updateOrderDto, changedBy);
 
-        // Assert
         result.Status.Should().Be(OrderStatus.PickedUp);
         _mockTrackingHubService.Verify(x => x.NotifyOrderPickedUpAsync(orderId), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateOrderStatusAsync_ShouldSetDeliveredAt_WhenStatusIsDelivered()
+    {
+        var orderId = Guid.NewGuid();
+        var changedBy = Guid.NewGuid();
+        var order = new Order
+        {
+            Id = orderId,
+            CustomerId = Guid.NewGuid(),
+            Status = OrderStatus.InTransit,
+            TrackingNumber = "CT-TEST1234",
+            PickupAddress = "123 Main St",
+            PickupLatitude = 40.7128,
+            PickupLongitude = -74.0060,
+            DeliveryAddress = "456 Oak Ave",
+            DeliveryLatitude = 40.7580,
+            DeliveryLongitude = -73.9855,
+            EstimatedDistanceKm = 5m,
+            EstimatedDuration = "0h 8m",
+            Price = 15m,
+            DeliveredAt = null
+        };
+
+        var updateOrderDto = new UpdateOrderDto(
+            CourierId: null,
+            Status: OrderStatus.Delivered,
+            PickedUpAt: null,
+            DeliveredAt: null,
+            Note: "Delivered"
+        );
+
+        var updatedOrder = new Order
+        {
+            Id = orderId,
+            CustomerId = order.CustomerId,
+            Status = OrderStatus.Delivered,
+            TrackingNumber = order.TrackingNumber,
+            PickupAddress = order.PickupAddress,
+            PickupLatitude = order.PickupLatitude,
+            PickupLongitude = order.PickupLongitude,
+            DeliveryAddress = order.DeliveryAddress,
+            DeliveryLatitude = order.DeliveryLatitude,
+            DeliveryLongitude = order.DeliveryLongitude,
+            EstimatedDistanceKm = order.EstimatedDistanceKm,
+            EstimatedDuration = order.EstimatedDuration,
+            Price = order.Price,
+            DeliveredAt = DateTime.UtcNow
+        };
+
+        var orderDto = new OrderDto(
+            Id: updatedOrder.Id,
+            CustomerId: updatedOrder.CustomerId,
+            CourierId: null,
+            TrackingNumber: updatedOrder.TrackingNumber,
+            PickupAddress: updatedOrder.PickupAddress,
+            PickupLatitude: updatedOrder.PickupLatitude,
+            PickupLongitude: updatedOrder.PickupLongitude,
+            DeliveryAddress: updatedOrder.DeliveryAddress,
+            DeliveryLatitude: updatedOrder.DeliveryLatitude,
+            DeliveryLongitude: updatedOrder.DeliveryLongitude,
+            PackageDescription: null,
+            PackageWeight: 0m,
+            PackageSize: PackageSize.Small,
+            EstimatedDistanceKm: updatedOrder.EstimatedDistanceKm,
+            EstimatedDuration: updatedOrder.EstimatedDuration,
+            Price: updatedOrder.Price,
+            Status: updatedOrder.Status,
+            CreatedAt: DateTime.UtcNow,
+            PickedUpAt: null,
+            DeliveredAt: updatedOrder.DeliveredAt
+        );
+
+        _mockOrderRepository
+            .Setup(x => x.GetByIdAsync(orderId))
+            .ReturnsAsync(order);
+
+        _mockOrderRepository
+            .Setup(x => x.UpdateAsync(It.IsAny<Order>()))
+            .Returns<Order>(o => Task.FromResult(o));
+
+        _mockOrderRepository
+            .Setup(x => x.AddStatusHistoryAsync(It.IsAny<OrderStatusHistory>()))
+            .Returns(Task.CompletedTask);
+
+        _mockTrackingHubService
+            .Setup(x => x.NotifyOrderStatusUpdatedAsync(It.IsAny<Guid>(), It.IsAny<OrderStatus>()))
+            .Returns(Task.CompletedTask);
+
+        _mockMapper
+            .Setup(x => x.Map<OrderDto>(It.IsAny<Order>()))
+            .Returns(orderDto);
+
+        var result = await _orderService.UpdateOrderStatusAsync(orderId, updateOrderDto, changedBy);
+
+        result.Status.Should().Be(OrderStatus.Delivered);
+        result.DeliveredAt.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task UpdateOrderStatusAsync_ShouldThrow_WhenOrderNotFound()
+    {
+        var orderId = Guid.NewGuid();
+        var changedBy = Guid.NewGuid();
+        var updateOrderDto = new UpdateOrderDto(
+            CourierId: null,
+            Status: OrderStatus.Pending,
+            PickedUpAt: null,
+            DeliveredAt: null,
+            Note: "Update"
+        );
+
+        _mockOrderRepository
+            .Setup(x => x.GetByIdAsync(orderId))
+            .ReturnsAsync((Order?)null);
+
+        await Assert.ThrowsAsync<NotFoundException>(
+            () => _orderService.UpdateOrderStatusAsync(orderId, updateOrderDto, changedBy)
+        );
     }
 
     #endregion
@@ -544,7 +649,6 @@ public class OrderServiceTests
     [Fact]
     public async Task CancelOrderAsync_ShouldThrow_WhenOrderIsDelivered()
     {
-        // Arrange
         var orderId = Guid.NewGuid();
         var changedBy = Guid.NewGuid();
         var deliveredOrder = new Order
@@ -569,7 +673,6 @@ public class OrderServiceTests
             .Setup(x => x.GetByIdAsync(orderId))
             .ReturnsAsync(deliveredOrder);
 
-        // Act & Assert
         await Assert.ThrowsAsync<Domain.Exceptions.InvalidOperationException>(
             () => _orderService.CancelOrderAsync(orderId, changedBy)
         );
@@ -578,7 +681,6 @@ public class OrderServiceTests
     [Fact]
     public async Task CancelOrderAsync_ShouldThrow_WhenAlreadyCancelled()
     {
-        // Arrange
         var orderId = Guid.NewGuid();
         var changedBy = Guid.NewGuid();
         var cancelledOrder = new Order
@@ -602,7 +704,6 @@ public class OrderServiceTests
             .Setup(x => x.GetByIdAsync(orderId))
             .ReturnsAsync(cancelledOrder);
 
-        // Act & Assert
         await Assert.ThrowsAsync<Domain.Exceptions.InvalidOperationException>(
             () => _orderService.CancelOrderAsync(orderId, changedBy)
         );
@@ -611,7 +712,6 @@ public class OrderServiceTests
     [Fact]
     public async Task CancelOrderAsync_ShouldSucceed_WhenOrderIsPending()
     {
-        // Arrange
         var orderId = Guid.NewGuid();
         var changedBy = Guid.NewGuid();
         var order = new Order
@@ -677,20 +777,18 @@ public class OrderServiceTests
 
         _mockOrderRepository
             .Setup(x => x.UpdateAsync(It.IsAny<Order>()))
-            .Returns((Order _) => Task.CompletedTask);
+            .Returns<Order>(o => Task.FromResult(o));
 
         _mockOrderRepository
             .Setup(x => x.AddStatusHistoryAsync(It.IsAny<OrderStatusHistory>()))
-            .Returns((OrderStatusHistory _) => Task.CompletedTask);
+            .Returns(Task.CompletedTask);
 
         _mockMapper
             .Setup(x => x.Map<OrderDto>(It.IsAny<Order>()))
             .Returns(orderDto);
 
-        // Act
         var result = await _orderService.CancelOrderAsync(orderId, changedBy);
 
-        // Assert
         result.Should().NotBeNull();
         result.Status.Should().Be(OrderStatus.Cancelled);
         _mockOrderRepository.Verify(x => x.UpdateAsync(It.IsAny<Order>()), Times.Once);
@@ -700,7 +798,6 @@ public class OrderServiceTests
     [Fact]
     public async Task CancelOrderAsync_ShouldSucceed_WhenOrderIsPickedUp()
     {
-        // Arrange
         var orderId = Guid.NewGuid();
         var changedBy = Guid.NewGuid();
         var order = new Order
@@ -768,23 +865,36 @@ public class OrderServiceTests
 
         _mockOrderRepository
             .Setup(x => x.UpdateAsync(It.IsAny<Order>()))
-            .Returns((Order _) => Task.CompletedTask);
+            .Returns<Order>(o => Task.FromResult(o));
 
         _mockOrderRepository
             .Setup(x => x.AddStatusHistoryAsync(It.IsAny<OrderStatusHistory>()))
-            .Returns((OrderStatusHistory _) => Task.CompletedTask);
+            .Returns(Task.CompletedTask);
 
         _mockMapper
             .Setup(x => x.Map<OrderDto>(It.IsAny<Order>()))
             .Returns(orderDto);
 
-        // Act
         var result = await _orderService.CancelOrderAsync(orderId, changedBy);
 
-        // Assert
         result.Should().NotBeNull();
         result.Status.Should().Be(OrderStatus.Cancelled);
         _mockOrderRepository.Verify(x => x.UpdateAsync(It.IsAny<Order>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task CancelOrderAsync_ShouldThrow_WhenOrderNotFound()
+    {
+        var orderId = Guid.NewGuid();
+        var changedBy = Guid.NewGuid();
+
+        _mockOrderRepository
+            .Setup(x => x.GetByIdAsync(orderId))
+            .ReturnsAsync((Order?)null);
+
+        await Assert.ThrowsAsync<NotFoundException>(
+            () => _orderService.CancelOrderAsync(orderId, changedBy)
+        );
     }
 
     #endregion
@@ -794,13 +904,11 @@ public class OrderServiceTests
     [Fact]
     public async Task GetByIdAsync_ShouldThrow_WhenOrderNotFound()
     {
-        // Arrange
         var orderId = Guid.NewGuid();
         _mockOrderRepository
             .Setup(x => x.GetByIdAsync(orderId))
             .ReturnsAsync((Order?)null);
 
-        // Act & Assert
         await Assert.ThrowsAsync<NotFoundException>(
             () => _orderService.GetByIdAsync(orderId)
         );
@@ -809,7 +917,6 @@ public class OrderServiceTests
     [Fact]
     public async Task GetByIdAsync_ShouldReturnOrder_WhenFound()
     {
-        // Arrange
         var orderId = Guid.NewGuid();
         var order = new Order
         {
@@ -859,13 +966,87 @@ public class OrderServiceTests
             .Setup(x => x.Map<OrderDto>(order))
             .Returns(orderDto);
 
-        // Act
         var result = await _orderService.GetByIdAsync(orderId);
 
-        // Assert
         result.Should().NotBeNull();
         result.Id.Should().Be(orderId);
         result.TrackingNumber.Should().Be(order.TrackingNumber);
+    }
+
+    #endregion
+
+    #region GetByTrackingNumberAsync Tests
+
+    [Fact]
+    public async Task GetByTrackingNumberAsync_ShouldThrow_WhenNotFound()
+    {
+        var trackingNumber = "CT-NOTFOUND";
+        _mockOrderRepository
+            .Setup(x => x.GetByTrackingNumberAsync(trackingNumber))
+            .ReturnsAsync((Order?)null);
+
+        await Assert.ThrowsAsync<NotFoundException>(
+            () => _orderService.GetByTrackingNumberAsync(trackingNumber)
+        );
+    }
+
+    [Fact]
+    public async Task GetByTrackingNumberAsync_ShouldReturnOrder_WhenFound()
+    {
+        var trackingNumber = "CT-TEST1234";
+        var order = new Order
+        {
+            Id = Guid.NewGuid(),
+            CustomerId = Guid.NewGuid(),
+            Status = OrderStatus.Created,
+            TrackingNumber = trackingNumber,
+            PickupAddress = "123 Main St",
+            PickupLatitude = 40.7128,
+            PickupLongitude = -74.0060,
+            DeliveryAddress = "456 Oak Ave",
+            DeliveryLatitude = 40.7580,
+            DeliveryLongitude = -73.9855,
+            EstimatedDistanceKm = 5m,
+            EstimatedDuration = "0h 8m",
+            Price = 15m
+        };
+
+        var orderDto = new OrderDto(
+            Id: order.Id,
+            CustomerId: order.CustomerId,
+            CourierId: null,
+            TrackingNumber: order.TrackingNumber,
+            PickupAddress: order.PickupAddress,
+            PickupLatitude: order.PickupLatitude,
+            PickupLongitude: order.PickupLongitude,
+            DeliveryAddress: order.DeliveryAddress,
+            DeliveryLatitude: order.DeliveryLatitude,
+            DeliveryLongitude: order.DeliveryLongitude,
+            PackageDescription: null,
+            PackageWeight: 0m,
+            PackageSize: PackageSize.Small,
+            EstimatedDistanceKm: order.EstimatedDistanceKm,
+            EstimatedDuration: order.EstimatedDuration,
+            Price: order.Price,
+            Status: order.Status,
+            CreatedAt: DateTime.UtcNow,
+            PickedUpAt: null,
+            DeliveredAt: null
+        );
+
+        _mockOrderRepository
+            .Setup(x => x.GetByTrackingNumberAsync(trackingNumber))
+            .ReturnsAsync(order);
+
+        _mockMapper
+            .Setup(x => x.Map<OrderDto>(order))
+            .Returns(orderDto);
+
+        var result = await _orderService.GetByTrackingNumberAsync(trackingNumber);
+
+        result.Should().NotBeNull();
+        result.TrackingNumber.Should().Be(trackingNumber);
+        result.Id.Should().Be(order.Id);
     }
 
     #endregion

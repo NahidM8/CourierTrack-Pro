@@ -1,3 +1,4 @@
+using CourierTrack.Application.Interfaces.Hubs;
 using CourierTrack.Domain.Constants;
 
 var builder = WebApplication.CreateBuilder(args);

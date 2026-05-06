@@ -1,6 +1,4 @@
-﻿using CourierTrack.Domain.Enums;
-
-namespace CourierTrack.API.Controllers;
+﻿namespace CourierTrack.API.Controllers;
 
 [ApiController]
 [Route("api/v1/admin")]

@@ -1,6 +1,4 @@
-﻿using System.Security.Claims;
-
-namespace CourierTrack.API.Controllers;
+﻿namespace CourierTrack.API.Controllers;
 
 [Authorize]
 [Route("api/v1/orders")]

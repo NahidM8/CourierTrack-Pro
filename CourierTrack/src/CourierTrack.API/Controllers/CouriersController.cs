@@ -1,7 +1,4 @@
-﻿using CourierTrack.Application.Services;
-using System.Security.Claims;
-
-namespace CourierTrack.API.Controllers
+﻿namespace CourierTrack.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]

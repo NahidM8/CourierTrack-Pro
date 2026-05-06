@@ -1,4 +1,4 @@
-﻿namespace CourierTrack.Application.Interfaces;
+﻿namespace CourierTrack.Application.Interfaces.Services;
 
 public interface ICourierService
 {

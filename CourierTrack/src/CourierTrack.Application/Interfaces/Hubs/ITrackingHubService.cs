@@ -1,4 +1,4 @@
-﻿namespace CourierTrack.Application.Interfaces;
+﻿namespace CourierTrack.Application.Interfaces.Hubs;
 
 public interface ITrackingHubService
 {
