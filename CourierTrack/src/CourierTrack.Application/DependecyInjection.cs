@@ -16,6 +16,7 @@ public static class DependencyInjection
         services.AddScoped<IPaymentService, PaymentService>();
         services.AddScoped<IUserService, UserService>();
         services.Configure<PricingOptions>(configuration.GetSection(PricingOptions.SectionName));
+        services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
         return services;
     }
 }

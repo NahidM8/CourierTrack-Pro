@@ -14,6 +14,7 @@ global using CourierTrack.Application.Validators.Order;
 global using Microsoft.Extensions.DependencyInjection;
 global using Microsoft.Extensions.Configuration;
 global using Microsoft.Extensions.Options;
+global using Microsoft.Extensions.Logging;
 global using Microsoft.AspNetCore.Identity;
 
 global using CourierTrack.Domain.Exceptions;

@@ -67,7 +67,9 @@ builder.Services.AddAuthentication(options =>
             ValidIssuer = jwtIssuer,
             ValidAudience = jwtAudience,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
-            ClockSkew = TimeSpan.Zero
+            ClockSkew = TimeSpan.Zero,
+            RoleClaimType = ClaimTypes.Role,
+            NameClaimType = ClaimTypes.Name
         };
 
         options.Events = new JwtBearerEvents
@@ -78,6 +80,17 @@ builder.Services.AddAuthentication(options =>
                 var path = context.HttpContext.Request.Path;
                 if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments(ApplicationConstants.Hubs.TrackingHubPath))
                     context.Token = accessToken;
+                return Task.CompletedTask;
+            },
+
+            OnAuthenticationFailed = context =>
+            {
+                Console.WriteLine($"Auth failed: {context.Exception.Message}");
+                return Task.CompletedTask;
+            },
+            OnTokenValidated = context =>
+            {
+                Console.WriteLine("Token validated successfully");
                 return Task.CompletedTask;
             }
         };

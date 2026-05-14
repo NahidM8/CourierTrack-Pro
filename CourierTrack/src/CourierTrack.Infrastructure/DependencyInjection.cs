@@ -1,5 +1,3 @@
-using CourierTrack.Application.Interfaces.Repositories;
-using CourierTrack.Application.Interfaces.Services;
 using CourierTrack.Infrastructure.Repositories.Implementations;
 using CourierTrack.Infrastructure.Services;
 using Microsoft.Extensions.Configuration;
@@ -18,11 +16,17 @@ public static class DependencyInjection
             options.UseSqlite(connectionString));
 
         services.AddIdentityCore<User>(options =>
-            {
-                options.User.RequireUniqueEmail = true;
-            })
-            .AddRoles<IdentityRole<Guid>>()
-            .AddEntityFrameworkStores<CourierTrackDbContext>();
+        {
+            options.User.RequireUniqueEmail = true;
+            options.SignIn.RequireConfirmedEmail = false;
+            options.SignIn.RequireConfirmedAccount = false;
+            options.Lockout.AllowedForNewUsers = false;
+        })
+        .AddRoles<IdentityRole<Guid>>()
+        .AddEntityFrameworkStores<CourierTrackDbContext>()
+        .AddDefaultTokenProviders()
+        .AddUserManager<UserManager<User>>()
+        .AddSignInManager();
 
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
         services.AddScoped<IUserRepository, UserRepository>();

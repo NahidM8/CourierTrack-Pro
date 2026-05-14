@@ -5,18 +5,24 @@ public class AuthService : IAuthService
     private readonly UserManager<User> _userManager;
     private readonly IJwtService _jwtService;
     private readonly IRefreshTokenRepository _refreshTokenRepository;
+    private readonly ICourierRepository _courierRepository;
     private readonly JwtOptions _jwtOptions;
+    private readonly ILogger<AuthService> _logger;
 
     public AuthService(
         UserManager<User> userManager,
         IJwtService jwtService,
         IRefreshTokenRepository refreshTokenRepository,
-        IOptions<JwtOptions> jwtOptions)
+        ICourierRepository courierRepository,
+        IOptions<JwtOptions> jwtOptions,
+        ILogger<AuthService> logger)
     {
         _userManager = userManager;
         _jwtService = jwtService;
         _refreshTokenRepository = refreshTokenRepository;
+        _courierRepository = courierRepository;
         _jwtOptions = jwtOptions.Value;
+        _logger = logger;
     }
 
     public async Task<AuthResponseDto> RegisterAsync(RegisterRequestDto request)
@@ -39,7 +45,31 @@ public class AuthService : IAuthService
         if (!result.Succeeded)
         {
             var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+            _logger.LogError("User creation failed: {Errors}", errors);
             throw new Domain.Exceptions.InvalidOperationException($"User creation failed: {errors}");
+        }
+
+        // Create Courier entity if user is registering as Courier
+        if (request.Role == Role.Courier && request.VehicleType.HasValue)
+        {
+            try
+            {
+                var courier = new Courier
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = user.Id,
+                    VehicleType = request.VehicleType.Value,
+                    IsAvailable = true,
+                    TotalDeliveries = 0
+                };
+                await _courierRepository.AddAsync(courier);
+                _logger.LogInformation("Courier created successfully for user {UserId}", user.Id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating courier for user {UserId}", user.Id);
+                throw;
+            }
         }
 
         return await GenerateAuthResponseAsync(user);

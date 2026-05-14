@@ -29,5 +29,9 @@ public class RegisterRequestDtoValidator : AbstractValidator<RegisterRequestDto>
             .IsInEnum().WithMessage("Invalid role")
             .Must(role => role == Role.Customer || role == Role.Courier)
             .WithMessage("Role must be Customer or Courier");
+
+        RuleFor(x => x.VehicleType)
+            .NotNull().WithMessage("Vehicle type is required for Courier registration")
+            .When(x => x.Role == Role.Courier);
     }
 }
