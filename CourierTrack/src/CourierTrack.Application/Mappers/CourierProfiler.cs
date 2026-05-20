@@ -5,7 +5,17 @@ public class CourierProfiler : Profile
     public CourierProfiler()
     {
         CreateMap<Courier, CourierDto>()
-            .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.User.FullName))
-            .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.User.PhoneNumber));
+            .ConstructUsing(src => new CourierDto(
+                src.Id,
+                src.UserId,
+                src.User.FullName,
+                src.User.PhoneNumber,
+                src.VehicleType,
+                src.CurrentLatitude,
+                src.CurrentLongitude,
+                src.IsAvailable,
+                src.Rating,
+                src.TotalDeliveries
+            ));
     }
 }

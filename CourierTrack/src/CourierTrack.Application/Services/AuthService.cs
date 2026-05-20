@@ -49,27 +49,18 @@ public class AuthService : IAuthService
             throw new Domain.Exceptions.InvalidOperationException($"User creation failed: {errors}");
         }
 
-        // Create Courier entity if user is registering as Courier
         if (request.Role == Role.Courier && request.VehicleType.HasValue)
         {
-            try
+            var courier = new Courier
             {
-                var courier = new Courier
-                {
-                    Id = Guid.NewGuid(),
-                    UserId = user.Id,
-                    VehicleType = request.VehicleType.Value,
-                    IsAvailable = true,
-                    TotalDeliveries = 0
-                };
-                await _courierRepository.AddAsync(courier);
-                _logger.LogInformation("Courier created successfully for user {UserId}", user.Id);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating courier for user {UserId}", user.Id);
-                throw;
-            }
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                VehicleType = request.VehicleType.Value,
+                IsAvailable = true,
+                TotalDeliveries = 0
+            };
+            await _courierRepository.AddAsync(courier);
+            _logger.LogInformation("Courier created successfully for user {UserId}", user.Id);
         }
 
         return await GenerateAuthResponseAsync(user);
