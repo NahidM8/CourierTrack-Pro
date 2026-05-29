@@ -19,6 +19,8 @@ public class OrderAssignmentService : IOrderAssignmentService
         _mapper = mapper;
     }
 
+    private static Guid SystemUserId => Guid.Empty;
+
     public async Task<OrderDto> AssignOrderAsync(Guid orderId, Guid courierId)
     {
         var order = await _orderRepository.GetByIdAsync(orderId)
@@ -33,12 +35,23 @@ public class OrderAssignmentService : IOrderAssignmentService
         if (!courier.IsAvailable)
             throw new Domain.Exceptions.InvalidOperationException("Courier is not available.");
 
+        var oldStatus = order.Status;
         order.CourierId = courierId;
         order.Status = OrderStatus.Assigned;
         courier.IsAvailable = false;
 
         await _orderRepository.UpdateAsync(order);
         await _courierRepository.UpdateAsync(courier);
+
+        var history = new OrderStatusHistory
+        {
+            OrderId = orderId,
+            OldStatus = oldStatus,
+            NewStatus = OrderStatus.Assigned,
+            ChangedBy = SystemUserId,
+            Note = $"Auto-assigned to courier {courier.Id}"
+        };
+        await _orderRepository.AddStatusHistoryAsync(history);
 
         await _trackingHubService.NotifyNewOrderAssignedAsync(courierId, orderId);
 
@@ -70,16 +83,34 @@ public class OrderAssignmentService : IOrderAssignmentService
             .ToList();
 
         if (nearest.Count == 0)
-            throw new Domain.Exceptions.InvalidOperationException("No available couriers found.");
+        {
+            if (order.Status == OrderStatus.Created)
+            {
+                var history = new OrderStatusHistory
+                {
+                    OrderId = orderId,
+                    OldStatus = OrderStatus.Created,
+                    NewStatus = OrderStatus.Pending,
+                    ChangedBy = SystemUserId,
+                    Note = "No available couriers found. Order moved to pending queue."
+                };
+                order.Status = OrderStatus.Pending;
+                await _orderRepository.UpdateAsync(order);
+                await _orderRepository.AddStatusHistoryAsync(history);
+            }
+            return _mapper.Map<OrderDto>(order);
+        }
 
         var maxDeliveries = nearest.Max(x => x.Courier.TotalDeliveries);
+        var maxDistance = nearest.Max(x => x.Distance);
 
         var best = nearest
             .Select(x => new
             {
                 x.Courier,
                 Score = (0.6m * (x.Courier.Rating ?? 0m)) +
-                        (0.4m * (maxDeliveries == 0 ? 0 : (decimal)x.Courier.TotalDeliveries / maxDeliveries))
+                        (0.4m * (maxDeliveries == 0 ? 0 : (decimal)x.Courier.TotalDeliveries / maxDeliveries)) +
+                        (0.2m * (maxDistance == 0 ? 0 : 1 - (x.Distance / maxDistance)))
             })
             .OrderByDescending(x => x.Score)
             .First();
@@ -111,12 +142,22 @@ public class OrderAssignmentService : IOrderAssignmentService
         if (courier.IsAvailable)
             throw new Domain.Exceptions.InvalidOperationException("Courier is already available. Cannot unassign an order from an available courier.");
 
+        var history = new OrderStatusHistory
+        {
+            OrderId = orderId,
+            OldStatus = OrderStatus.Assigned,
+            NewStatus = OrderStatus.Pending,
+            ChangedBy = SystemUserId,
+            Note = $"Unassigned from courier {courier.Id}. Order returned to pending queue."
+        };
+
         order.CourierId = null;
         order.Status = OrderStatus.Pending;
         courier.IsAvailable = true;
 
         await _orderRepository.UpdateAsync(order);
         await _courierRepository.UpdateAsync(courier);
+        await _orderRepository.AddStatusHistoryAsync(history);
 
         return _mapper.Map<OrderDto>(order);
     }

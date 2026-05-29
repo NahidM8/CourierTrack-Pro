@@ -31,6 +31,9 @@ public class AuthService : IAuthService
         if (existingUser is not null)
             throw new Domain.Exceptions.InvalidOperationException("User with this email already exists.");
 
+        if (request.Role == Role.Courier && !request.VehicleType.HasValue)
+            throw new Domain.Exceptions.InvalidOperationException("Vehicle type is required for courier registration.");
+
         var user = new User
         {
             FullName = request.FullName,
@@ -81,6 +84,14 @@ public class AuthService : IAuthService
         }
 
         return await GenerateAuthResponseAsync(user);
+    }
+
+    public async Task LogoutAsync(string refreshToken)
+    {
+        var token = await _refreshTokenRepository.GetByTokenAsync(refreshToken);
+        if (token is null || token.IsRevoked) return;
+        token.IsRevoked = true;
+        await _refreshTokenRepository.UpdateAsync(token);
     }
 
     public async Task<AuthResponseDto> RefreshTokenAsync(RefreshTokenRequestDto request)

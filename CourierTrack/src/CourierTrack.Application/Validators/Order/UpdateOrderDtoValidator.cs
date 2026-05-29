@@ -1,7 +1,3 @@
-using CourierTrack.Application.DTOs;
-using CourierTrack.Domain.Enums;
-using FluentValidation;
-
 namespace CourierTrack.Application.Validators.Order;
 
 public class UpdateOrderDtoValidator : AbstractValidator<UpdateOrderDto>

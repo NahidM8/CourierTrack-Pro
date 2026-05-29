@@ -4,6 +4,7 @@ public class OrderService : IOrderService
 {
     private readonly IOrderRepository _orderRepository;
     private readonly ITrackingHubService _trackingHubService;
+    private readonly ICourierRepository _courierRepository;
     private readonly IOrderAssignmentService _orderAssignmentService;
     private readonly IMapper _mapper;
     private readonly PricingOptions _pricingOptions;
@@ -12,11 +13,14 @@ public class OrderService : IOrderService
         IOrderRepository orderRepository,
         ICourierRepository courierRepository,
         ITrackingHubService trackingHubService,
+        IOrderAssignmentService orderAssignmentService,
         IMapper mapper,
         IOptions<PricingOptions> pricingOptions)
     {
         _orderRepository = orderRepository;
+        _courierRepository = courierRepository;
         _trackingHubService = trackingHubService;
+        _orderAssignmentService = orderAssignmentService;
         _mapper = mapper;
         _pricingOptions = pricingOptions.Value;
     }
@@ -99,7 +103,8 @@ public class OrderService : IOrderService
         var createdOrder = await _orderRepository.AddAsync(order);
 
         await _orderAssignmentService.AutoAssignOrderAsync(createdOrder.Id);
-        return _mapper.Map<OrderDto>(createdOrder);
+        var updatedOrder = await _orderRepository.GetByIdAsync(createdOrder.Id);
+        return _mapper.Map<OrderDto>(updatedOrder);
     }
 
     public async Task<OrderDto> UpdateOrderStatusAsync(Guid orderId, UpdateOrderDto request, Guid changedBy)
@@ -162,6 +167,17 @@ public class OrderService : IOrderService
         };
 
         order.Status = OrderStatus.Cancelled;
+
+        if (order.CourierId.HasValue)
+        {
+            var courier = await _courierRepository.GetByIdAsync(order.CourierId.Value);
+            if (courier is not null)
+            {
+                courier.IsAvailable = true;
+                await _courierRepository.UpdateAsync(courier);
+            }
+            order.CourierId = null;
+        }
 
         await _orderRepository.UpdateAsync(order);
         await _orderRepository.AddStatusHistoryAsync(history);

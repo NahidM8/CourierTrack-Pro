@@ -20,6 +20,7 @@ public class OrderServiceTests
     private readonly Mock<IOrderRepository> _mockOrderRepository;
     private readonly Mock<ICourierRepository> _mockCourierRepository;
     private readonly Mock<ITrackingHubService> _mockTrackingHubService;
+    private readonly Mock<IOrderAssignmentService> _mockOrderAssignmentService;
     private readonly Mock<IMapper> _mockMapper;
     private readonly IOrderService _orderService;
     private readonly PricingOptions _pricingOptions;
@@ -29,6 +30,7 @@ public class OrderServiceTests
         _mockOrderRepository = new Mock<IOrderRepository>();
         _mockCourierRepository = new Mock<ICourierRepository>();
         _mockTrackingHubService = new Mock<ITrackingHubService>();
+        _mockOrderAssignmentService = new Mock<IOrderAssignmentService>();
         _mockMapper = new Mock<IMapper>();
 
         _pricingOptions = new PricingOptions
@@ -48,6 +50,7 @@ public class OrderServiceTests
             _mockOrderRepository.Object,
             _mockCourierRepository.Object,
             _mockTrackingHubService.Object,
+            _mockOrderAssignmentService.Object,
             _mockMapper.Object,
             optionsMonitor
         );
@@ -122,6 +125,10 @@ public class OrderServiceTests
         _mockMapper
             .Setup(x => x.Map<OrderDto>(It.IsAny<Order>()))
             .Returns(orderDto);
+
+        _mockOrderAssignmentService
+            .Setup(x => x.AutoAssignOrderAsync(It.IsAny<Guid>()))
+            .ReturnsAsync(orderDto);
 
         var result = await _orderService.CreateOrderAsync(createOrderDto);
 
@@ -199,6 +206,10 @@ public class OrderServiceTests
             .Setup(x => x.Map<OrderDto>(It.IsAny<Order>()))
             .Returns(orderDto);
 
+        _mockOrderAssignmentService
+            .Setup(x => x.AutoAssignOrderAsync(It.IsAny<Guid>()))
+            .ReturnsAsync(orderDto);
+
         var result = await _orderService.CreateOrderAsync(createOrderDto);
 
         result.Should().NotBeNull();
@@ -273,6 +284,10 @@ public class OrderServiceTests
         _mockMapper
             .Setup(x => x.Map<OrderDto>(It.IsAny<Order>()))
             .Returns(orderDto);
+
+        _mockOrderAssignmentService
+            .Setup(x => x.AutoAssignOrderAsync(It.IsAny<Guid>()))
+            .ReturnsAsync(orderDto);
 
         var result = await _orderService.CreateOrderAsync(createOrderDto);
 
@@ -429,7 +444,7 @@ public class OrderServiceTests
         {
             Id = orderId,
             CustomerId = Guid.NewGuid(),
-            Status = OrderStatus.Pending,
+            Status = OrderStatus.Assigned,
             TrackingNumber = "CT-TEST1234",
             PickupAddress = "123 Main St",
             PickupLatitude = 40.7128,
