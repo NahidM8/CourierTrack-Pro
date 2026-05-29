@@ -4,6 +4,7 @@ public class OrderService : IOrderService
 {
     private readonly IOrderRepository _orderRepository;
     private readonly ITrackingHubService _trackingHubService;
+    private readonly IOrderAssignmentService _orderAssignmentService;
     private readonly IMapper _mapper;
     private readonly PricingOptions _pricingOptions;
 
@@ -96,6 +97,8 @@ public class OrderService : IOrderService
         };
 
         var createdOrder = await _orderRepository.AddAsync(order);
+
+        await _orderAssignmentService.AutoAssignOrderAsync(createdOrder.Id);
         return _mapper.Map<OrderDto>(createdOrder);
     }
 
@@ -106,6 +109,9 @@ public class OrderService : IOrderService
 
         if (order.Status == OrderStatus.Cancelled)
             throw new Domain.Exceptions.InvalidOperationException("Cancelled orders cannot be updated.");
+
+        if(!OrderStatusValidator.IsValidTransition(order.Status, request.Status))
+        throw new Domain.Exceptions.InvalidOperationException($"Invalid status transition from {order.Status} to {request.Status}.");
 
         var history = new OrderStatusHistory
         {
