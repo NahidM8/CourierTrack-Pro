@@ -1,12 +1,11 @@
-﻿using CourierTrack.Domain.Constants;
-
-namespace CourierTrack.Application.Services;
+﻿namespace CourierTrack.Application.Services;
 
 public class OrderService : IOrderService
 {
     private readonly IOrderRepository _orderRepository;
-    private readonly ICourierRepository _courierRepository;
     private readonly ITrackingHubService _trackingHubService;
+    private readonly ICourierRepository _courierRepository;
+    private readonly IOrderAssignmentService _orderAssignmentService;
     private readonly IMapper _mapper;
     private readonly PricingOptions _pricingOptions;
 
@@ -14,12 +13,14 @@ public class OrderService : IOrderService
         IOrderRepository orderRepository,
         ICourierRepository courierRepository,
         ITrackingHubService trackingHubService,
+        IOrderAssignmentService orderAssignmentService,
         IMapper mapper,
         IOptions<PricingOptions> pricingOptions)
     {
         _orderRepository = orderRepository;
         _courierRepository = courierRepository;
         _trackingHubService = trackingHubService;
+        _orderAssignmentService = orderAssignmentService;
         _mapper = mapper;
         _pricingOptions = pricingOptions.Value;
     }
@@ -100,7 +101,10 @@ public class OrderService : IOrderService
         };
 
         var createdOrder = await _orderRepository.AddAsync(order);
-        return _mapper.Map<OrderDto>(createdOrder);
+
+        await _orderAssignmentService.AutoAssignOrderAsync(createdOrder.Id);
+        var updatedOrder = await _orderRepository.GetByIdAsync(createdOrder.Id);
+        return _mapper.Map<OrderDto>(updatedOrder);
     }
 
     public async Task<OrderDto> UpdateOrderStatusAsync(Guid orderId, UpdateOrderDto request, Guid changedBy)
@@ -110,6 +114,9 @@ public class OrderService : IOrderService
 
         if (order.Status == OrderStatus.Cancelled)
             throw new Domain.Exceptions.InvalidOperationException("Cancelled orders cannot be updated.");
+
+        if(!OrderStatusValidator.IsValidTransition(order.Status, request.Status))
+        throw new Domain.Exceptions.InvalidOperationException($"Invalid status transition from {order.Status} to {request.Status}.");
 
         var history = new OrderStatusHistory
         {
@@ -161,6 +168,17 @@ public class OrderService : IOrderService
 
         order.Status = OrderStatus.Cancelled;
 
+        if (order.CourierId.HasValue)
+        {
+            var courier = await _courierRepository.GetByIdAsync(order.CourierId.Value);
+            if (courier is not null)
+            {
+                courier.IsAvailable = true;
+                await _courierRepository.UpdateAsync(courier);
+            }
+            order.CourierId = null;
+        }
+
         await _orderRepository.UpdateAsync(order);
         await _orderRepository.AddStatusHistoryAsync(history);
 
@@ -174,38 +192,6 @@ public class OrderService : IOrderService
 
         var history = await _orderRepository.GetStatusHistoryAsync(order.Id);
         return _mapper.Map<IEnumerable<OrderStatusHistoryDto>>(history);
-    }
-
-    public async Task<OrderDto> RateCourierAsync(Guid orderId, RateCourierDto request, Guid customerId)
-    {
-        if (request.Rating is < ApplicationConstants.Rating.MinimumRating or > ApplicationConstants.Rating.MaximumRating)
-            throw new Domain.Exceptions.InvalidOperationException($"Rating must be between {ApplicationConstants.Rating.MinimumRating} and {ApplicationConstants.Rating.MaximumRating}.");
-
-        var order = await _orderRepository.GetByIdAsync(orderId)
-            ?? throw new NotFoundException($"Order with id {orderId} not found.");
-
-        if (order.CustomerId != customerId)
-            throw new Domain.Exceptions.InvalidOperationException("You can only rate your own order.");
-
-        if (order.Status != OrderStatus.Delivered)
-            throw new Domain.Exceptions.InvalidOperationException("Courier can only be rated after delivery.");
-
-        if (!order.CourierId.HasValue)
-            throw new Domain.Exceptions.InvalidOperationException("Order has no assigned courier.");
-
-        var courier = await _courierRepository.GetByIdAsync(order.CourierId.Value)
-            ?? throw new NotFoundException($"Courier with id {order.CourierId.Value} not found.");
-
-        var ratingCount = courier.TotalDeliveries;
-        var currentAverage = courier.Rating ?? 0m;
-        var updatedAverage = ((currentAverage * ratingCount) + request.Rating) / (ratingCount + 1);
-
-        courier.TotalDeliveries = ratingCount + 1;
-        courier.Rating = Math.Round(updatedAverage, 2);
-
-        await _courierRepository.UpdateAsync(courier);
-
-        return _mapper.Map<OrderDto>(order);
     }
 
     private static string GenerateTrackingNumber()

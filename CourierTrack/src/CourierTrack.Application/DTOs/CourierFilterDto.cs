@@ -1,6 +1,4 @@
-﻿using CourierTrack.Domain.Common;
-
-namespace CourierTrack.Application.DTOs;
+﻿namespace CourierTrack.Application.DTOs;
 
 public class CourierFilterDto : PagedQuery
 {

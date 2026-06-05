@@ -33,12 +33,12 @@ public class OrderRepository(CourierTrackDbContext context) : Repository<Order>(
 
     public async Task<IEnumerable<Order>> GetByCustomerIdAsync(Guid customerId)
     {
-        return await context.Orders.Where(o => o.CustomerId == customerId).ToListAsync();
+        return await _dbSet.Where(o => o.CustomerId == customerId).ToListAsync();
     }
 
     public async Task<IEnumerable<Order>> GetByCourierIdAsync(Guid courierId)
     {
-        return await context.Orders.Where(o => o.CourierId == courierId).ToListAsync();
+        return await _dbSet.Where(o => o.CourierId == courierId).ToListAsync();
     }
 
     public async Task<IEnumerable<Order>> GetUnassignedOrdersAsync()

@@ -2,7 +2,7 @@
 
 public class Payment : BaseEntity
 {
-    public Guid OrderId { get; set; }
+    public Guid OrderId { get; init; }
     public decimal Amount { get; set; }
     public string Currency { get; set; } = string.Empty;
     public PaymentMethod PaymentMethod { get; set; }

@@ -6,15 +6,19 @@ global using CourierTrack.Application.DTOs;
 global using CourierTrack.Application.Options;
 global using CourierTrack.Application.Services;
 global using CourierTrack.Application.Utilities;
-global using CourierTrack.Application.Interfaces;
+global using CourierTrack.Application.Interfaces.Services;
+global using CourierTrack.Application.Interfaces.Repositories;
+global using CourierTrack.Application.Interfaces.Hubs;
 global using CourierTrack.Application.Validators.Order;
 
 global using Microsoft.Extensions.DependencyInjection;
 global using Microsoft.Extensions.Configuration;
 global using Microsoft.Extensions.Options;
+global using Microsoft.Extensions.Logging;
 global using Microsoft.AspNetCore.Identity;
 
 global using CourierTrack.Domain.Exceptions;
+global using CourierTrack.Domain.Constants;
 global using CourierTrack.Domain.Entities;
 global using CourierTrack.Domain.Common;
 global using CourierTrack.Domain.Enums;

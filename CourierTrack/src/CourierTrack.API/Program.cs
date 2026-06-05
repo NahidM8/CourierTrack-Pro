@@ -1,5 +1,3 @@
-using CourierTrack.Domain.Constants;
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -18,6 +16,40 @@ var jwtIssuer = jwtSection[ApplicationConstants.Jwt.IssuerKey] ?? throw new Inva
 var jwtAudience = jwtSection[ApplicationConstants.Jwt.AudienceKey] ?? throw new InvalidOperationException($"{ApplicationConstants.Jwt.ConfigurationSection}:{ApplicationConstants.Jwt.AudienceKey} is not configured.");
 var jwtKey = jwtSection[ApplicationConstants.Jwt.KeyProperty] ?? throw new InvalidOperationException($"{ApplicationConstants.Jwt.ConfigurationSection}:{ApplicationConstants.Jwt.KeyProperty} is not configured.");
 
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<CourierTrackDbContext>();
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddFixedWindowLimiter("fixed", limiterOptions =>
+    {
+        limiterOptions.PermitLimit = 60;
+        limiterOptions.Window = TimeSpan.FromMinutes(1);
+        limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        limiterOptions.QueueLimit = 0;
+    });
+    options.RejectionStatusCode = 429;
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 60,
+                Window = TimeSpan.FromMinutes(1)
+            }));
+});
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:3000")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
+
 builder.Services.AddAuthentication(options =>
     {
         options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -35,7 +67,9 @@ builder.Services.AddAuthentication(options =>
             ValidIssuer = jwtIssuer,
             ValidAudience = jwtAudience,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
-            ClockSkew = TimeSpan.Zero
+            ClockSkew = TimeSpan.Zero,
+            RoleClaimType = ClaimTypes.Role,
+            NameClaimType = ClaimTypes.Name
         };
 
         options.Events = new JwtBearerEvents
@@ -46,6 +80,17 @@ builder.Services.AddAuthentication(options =>
                 var path = context.HttpContext.Request.Path;
                 if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments(ApplicationConstants.Hubs.TrackingHubPath))
                     context.Token = accessToken;
+                return Task.CompletedTask;
+            },
+
+            OnAuthenticationFailed = context =>
+            {
+                Console.WriteLine($"Auth failed: {context.Exception.Message}");
+                return Task.CompletedTask;
+            },
+            OnTokenValidated = context =>
+            {
+                Console.WriteLine("Token validated successfully");
                 return Task.CompletedTask;
             }
         };
@@ -90,15 +135,17 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseRateLimiter();
 app.UseHttpsRedirection();
+app.UseCors("AllowFrontend");
+app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
+
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.UseMiddleware<RequestResponseLoggingMiddleware>();
-app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
-
 app.MapHub<TrackingHub>(ApplicationConstants.Hubs.TrackingHubPath);
-
+app.MapHealthChecks("/health");
 app.MapControllers();
 
 app.Run();

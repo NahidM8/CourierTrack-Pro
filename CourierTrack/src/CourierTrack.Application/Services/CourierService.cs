@@ -5,13 +5,20 @@ public class CourierService : ICourierService
     private readonly ICourierRepository _courierRepository;
     private readonly IOrderRepository _orderRepository;
     private readonly ITrackingHubService _trackingHubService;
+    private readonly IOrderAssignmentService _orderAssignmentService;
     private readonly IMapper _mapper;
 
-    public CourierService(ICourierRepository courierRepository, IOrderRepository orderRepository, ITrackingHubService trackingHubService, IMapper mapper)
+    public CourierService(
+        ICourierRepository courierRepository,
+        IOrderRepository orderRepository,
+        ITrackingHubService trackingHubService,
+        IOrderAssignmentService orderAssignmentService,
+        IMapper mapper)
     {
         _courierRepository = courierRepository;
         _orderRepository = orderRepository;
         _trackingHubService = trackingHubService;
+        _orderAssignmentService = orderAssignmentService;
         _mapper = mapper;
     }
 
@@ -90,12 +97,13 @@ public class CourierService : ICourierService
         if (order.Status != OrderStatus.Assigned)
             throw new Domain.Exceptions.InvalidOperationException($"Order is not in an assigned state.");
 
-        order.CourierId = courierId;
-        order.Status = OrderStatus.Assigned;
-        courier.IsAvailable = false;
+        if (order.CourierId != courierId)
+            throw new Domain.Exceptions.InvalidOperationException("Order is not assigned to this courier.");
 
         await _orderRepository.UpdateAsync(order);
         await _courierRepository.UpdateAsync(courier);
+
+        await _trackingHubService.NotifyOrderStatusUpdatedAsync(order.Id, order.Status);
     }
 
     public async Task RejectOrderAsync(Guid courierId, Guid orderId)
@@ -115,5 +123,9 @@ public class CourierService : ICourierService
 
         await _orderRepository.UpdateAsync(order);
         await _courierRepository.UpdateAsync(courier);
+
+        await _trackingHubService.NotifyOrderStatusUpdatedAsync(order.Id, order.Status);
+
+        await _orderAssignmentService.AutoAssignOrderAsync(orderId);
     }
 }

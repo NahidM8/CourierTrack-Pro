@@ -37,8 +37,14 @@ public class PaymentService : IPaymentService
             throw new BadRequestException("Cannot create payment for a cancelled order.");
 
         var existingPayment = await _paymentRepository.GetByOrderIdAsync(request.OrderId);
-        if (existingPayment is not null && existingPayment.Status == PaymentStatus.Completed)
-            throw new BadRequestException("Order has already been paid.");
+        if (existingPayment is not null)
+        {
+            if (existingPayment.Status == PaymentStatus.Completed)
+                throw new BadRequestException("Order has already been paid.");
+            
+            if (existingPayment.Status == PaymentStatus.Pending)
+                return _mapper.Map<PaymentDto>(existingPayment);
+        }
 
         var options = new PaymentIntentCreateOptions
         {
@@ -75,7 +81,7 @@ public class PaymentService : IPaymentService
             ?? throw new NotFoundException($"Payment with intent {request.StripePaymentIntentId} not found.");
 
         if (payment.Status == PaymentStatus.Completed)
-            throw new BadRequestException("Payment has already been completed.");
+            return _mapper.Map<PaymentDto>(payment);
 
         var service = new PaymentIntentService();
         var paymentIntent = await service.GetAsync(request.StripePaymentIntentId);
@@ -87,6 +93,14 @@ public class PaymentService : IPaymentService
         payment.PaidAt = DateTime.UtcNow;
 
         var updated = await _paymentRepository.UpdateAsync(payment);
+        
+        var order = await _orderRepository.GetByIdAsync(payment.OrderId);
+        if (order is not null && order.Status == OrderStatus.Created)
+        {
+            order.Status = OrderStatus.Pending;
+            await _orderRepository.UpdateAsync(order);
+        }
+
         return _mapper.Map<PaymentDto>(updated);
     }
 
@@ -120,6 +134,13 @@ public class PaymentService : IPaymentService
                     payment.Status = PaymentStatus.Completed;
                     payment.PaidAt = DateTime.UtcNow;
                     await _paymentRepository.UpdateAsync(payment);
+
+                    var order = await _orderRepository.GetByIdAsync(payment.OrderId);
+                    if (order is not null && order.Status == OrderStatus.Created)
+                    {
+                        order.Status = OrderStatus.Pending;
+                        await _orderRepository.UpdateAsync(order);
+                    }
                     break;
                 }
             case "payment_intent.payment_failed":

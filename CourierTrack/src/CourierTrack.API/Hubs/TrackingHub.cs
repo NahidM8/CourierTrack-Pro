@@ -1,6 +1,4 @@
-﻿using CourierTrack.Domain.Constants;
-
-namespace CourierTrack.API.Hubs;
+﻿namespace CourierTrack.API.Hubs;
 
 [Authorize]
 public class TrackingHub : Hub

@@ -2,7 +2,7 @@
 
 public class Courier : BaseEntity
 {
-    public Guid UserId { get; set; }
+    public Guid UserId { get; init; }
     public VehicleType VehicleType { get; set; }
     public double? CurrentLatitude { get; set; }
     public double? CurrentLongitude { get; set; }

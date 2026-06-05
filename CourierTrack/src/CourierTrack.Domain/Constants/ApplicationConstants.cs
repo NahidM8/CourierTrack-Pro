@@ -21,7 +21,7 @@ public static class ApplicationConstants
         public const string ConfigurationSection = "Jwt";
         public const string IssuerKey = "Issuer";
         public const string AudienceKey = "Audience";
-        public const string KeyProperty = "Key";
+        public const string KeyProperty = "SecretKey";
         public const string AccessToken = "access_token";
     }
 

@@ -15,6 +15,11 @@ public class GlobalExceptionHandlingMiddleware(
             logger.LogWarning(ex, "Application exception occurred: {ErrorCode}", ex.ErrorCode);
             await HandleExceptionAsync(context, ex.StatusCode, ex.Message, ex.ErrorCode);
         }
+        catch (UnauthorizedAccessException ex)
+        {
+            logger.LogWarning(ex, "Unauthorized access");
+            await HandleExceptionAsync(context, StatusCodes.Status401Unauthorized, ex.Message, "UNAUTHORIZED");
+        }
         catch (Exception ex)
         {
             logger.LogError(ex, "Unhandled exception occurred");

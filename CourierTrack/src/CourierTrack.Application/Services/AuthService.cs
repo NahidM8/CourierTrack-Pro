@@ -5,18 +5,24 @@ public class AuthService : IAuthService
     private readonly UserManager<User> _userManager;
     private readonly IJwtService _jwtService;
     private readonly IRefreshTokenRepository _refreshTokenRepository;
+    private readonly ICourierRepository _courierRepository;
     private readonly JwtOptions _jwtOptions;
+    private readonly ILogger<AuthService> _logger;
 
     public AuthService(
         UserManager<User> userManager,
         IJwtService jwtService,
         IRefreshTokenRepository refreshTokenRepository,
-        IOptions<JwtOptions> jwtOptions)
+        ICourierRepository courierRepository,
+        IOptions<JwtOptions> jwtOptions,
+        ILogger<AuthService> logger)
     {
         _userManager = userManager;
         _jwtService = jwtService;
         _refreshTokenRepository = refreshTokenRepository;
+        _courierRepository = courierRepository;
         _jwtOptions = jwtOptions.Value;
+        _logger = logger;
     }
 
     public async Task<AuthResponseDto> RegisterAsync(RegisterRequestDto request)
@@ -24,6 +30,9 @@ public class AuthService : IAuthService
         var existingUser = await _userManager.FindByEmailAsync(request.Email);
         if (existingUser is not null)
             throw new Domain.Exceptions.InvalidOperationException("User with this email already exists.");
+
+        if (request.Role == Role.Courier && !request.VehicleType.HasValue)
+            throw new Domain.Exceptions.InvalidOperationException("Vehicle type is required for courier registration.");
 
         var user = new User
         {
@@ -39,10 +48,24 @@ public class AuthService : IAuthService
         if (!result.Succeeded)
         {
             var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+            _logger.LogError("User creation failed: {Errors}", errors);
             throw new Domain.Exceptions.InvalidOperationException($"User creation failed: {errors}");
         }
 
-        await _userManager.AddToRoleAsync(user, request.Role.ToString());
+        if (request.Role == Role.Courier && request.VehicleType.HasValue)
+        {
+            var courier = new Courier
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                VehicleType = request.VehicleType.Value,
+                IsAvailable = true,
+                TotalDeliveries = 0
+            };
+            await _courierRepository.AddAsync(courier);
+            _logger.LogInformation("Courier created successfully for user {UserId}", user.Id);
+        }
+
         return await GenerateAuthResponseAsync(user);
     }
 
@@ -61,6 +84,14 @@ public class AuthService : IAuthService
         }
 
         return await GenerateAuthResponseAsync(user);
+    }
+
+    public async Task LogoutAsync(string refreshToken)
+    {
+        var token = await _refreshTokenRepository.GetByTokenAsync(refreshToken);
+        if (token is null || token.IsRevoked) return;
+        token.IsRevoked = true;
+        await _refreshTokenRepository.UpdateAsync(token);
     }
 
     public async Task<AuthResponseDto> RefreshTokenAsync(RefreshTokenRequestDto request)
@@ -118,7 +149,7 @@ public class AuthService : IAuthService
 
     private async Task<AuthResponseDto> GenerateAuthResponseAsync(User user)
     {
-        var roles = await _userManager.GetRolesAsync(user);
+        var roles = new List<string> { user.Role.ToString() };
         var accessToken = _jwtService.GenerateAccessToken(user, roles);
         var refreshToken = _jwtService.GenerateRefreshToken(user.Id);
 

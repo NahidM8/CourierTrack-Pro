@@ -1,6 +1,4 @@
-﻿using CourierTrack.Domain.Enums;
-
-namespace CourierTrack.API.Controllers;
+﻿namespace CourierTrack.API.Controllers;
 
 [ApiController]
 [Route("api/v1/admin")]
@@ -28,7 +26,7 @@ public class AdminController(
     public async Task<IActionResult> UpdateUserStatus(Guid id, [FromBody] UpdateUserStatusDto dto)
     {
         await userService.UpdateStatusAsync(id, dto.IsActive);
-        return Ok(ApiResponse<object>.SuccessResult(null));
+        return Ok(ApiResponse<object>.SuccessResult("Updated User status successfully"));
     }
 
     [HttpGet("dashboard")]

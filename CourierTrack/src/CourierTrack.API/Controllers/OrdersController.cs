@@ -1,12 +1,11 @@
-﻿using System.Security.Claims;
-
-namespace CourierTrack.API.Controllers;
+﻿namespace CourierTrack.API.Controllers;
 
 [Authorize]
 [Route("api/v1/orders")]
 [ApiController]
 public class OrdersController(
     IOrderService orderService,
+    ICourierRatingService courierRatingService,
     IValidator<CreateOrderDto> createOrderValidator,
     IValidator<UpdateOrderDto> updateOrderValidator
     ) : ControllerBase
@@ -98,7 +97,7 @@ public class OrdersController(
     public async Task<IActionResult> RateCourier(Guid id, [FromBody] RateCourierDto dto)
     {
         var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-        var result = await orderService.RateCourierAsync(id, dto, userId);
-        return Ok(ApiResponse<OrderDto>.SuccessResult(result));
+        var result = await courierRatingService.CreateRatingAsync(id, dto, userId);
+        return Ok(ApiResponse<CourierRatingDto>.SuccessResult(result));
     }
 }

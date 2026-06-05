@@ -1,4 +1,4 @@
-﻿namespace CourierTrack.Application.Interfaces;
+﻿namespace CourierTrack.Application.Interfaces.Services;
 
 public interface IOrderService
 {
@@ -12,5 +12,4 @@ public interface IOrderService
     Task<OrderDto> UpdateOrderStatusAsync(Guid orderId, UpdateOrderDto request, Guid changedBy);
     Task<OrderDto> CancelOrderAsync(Guid orderId, Guid changedBy);
     Task<IEnumerable<OrderStatusHistoryDto>> GetStatusHistoryAsync(Guid orderId);
-    Task<OrderDto> RateCourierAsync(Guid orderId, RateCourierDto request, Guid customerId);
 }
