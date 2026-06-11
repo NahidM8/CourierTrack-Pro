@@ -18,6 +18,7 @@ global using CourierTrack.Application;
 global using CourierTrack.Application.DTOs;
 global using CourierTrack.Application.Interfaces.Services;
 global using CourierTrack.Application.Interfaces.Hubs;
+global using CourierTrack.Application.Interfaces.Repositories;
 
 global using CourierTrack.Infrastructure;
 

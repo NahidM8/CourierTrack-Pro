@@ -14,4 +14,13 @@ public class TrackingHub : Hub
 
     public async Task LeaveCourierGroup(string courierId)
         => await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"{ApplicationConstants.Groups.CourierGroupPrefix}{courierId}");
+
+    [Authorize(Roles = "Admin")]
+    public async Task JoinAdminGroup()
+        => await Groups.AddToGroupAsync(Context.ConnectionId, ApplicationConstants.Groups.AdminGroup);
+
+    [Authorize(Roles = "Admin")]
+    public async Task LeaveAdminGroup()
+        => await Groups.RemoveFromGroupAsync(Context.ConnectionId, ApplicationConstants.Groups.AdminGroup);
 }
+

@@ -61,5 +61,6 @@ public static class ApplicationConstants
     {
         public const string OrderGroupPrefix = "order-";
         public const string CourierGroupPrefix = "courier-";
+        public const string AdminGroup = "admins";
     }
 }
